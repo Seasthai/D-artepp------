@@ -1,8 +1,8 @@
 // D-Arteapp 医疗剂量计算器 - 主要JavaScript逻辑
-// 版本：v2.2 - 修复onclick调用问题
+// 版本：v4.0 - 最终可用版（顺时针增大，指针90°）
 
 // 全局变量
-let currentWeight = 35.0;  // 改为25.0以匹配HTML默认值
+let currentWeight = 35.0;
 let selectedProduct = null;
 let isDragging = false;
 let startAngle = 0;
@@ -78,18 +78,16 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
 });
 
-// 初始化刻度盘
-// 初始化刻度盘
+// 初始化刻度盘 - 顺时针增大：5kg在135°，100kg在45°
 function initializeScale() {
     const scaleContainer = document.getElementById('scaleContainer');
     if (!scaleContainer) return;
     
     scaleContainer.innerHTML = '';
     
-    // 创建刻度线和数字（从右到左：5-100kg）
+    // 创建刻度线和数字（顺时针增大：5kg在左端135°，100kg在右端45°）
     for (let kg = 5; kg <= 100; kg += 2.5) {
-        // === 修改这里：顺时针增大，5kg在右端(45°)，100kg在左端(135°) ===
-        const angle = 45 + (kg - 5) * (90 / 95); // 5kg->45°, 100kg->135°
+        const angle = mapWeightToAngle(kg);
         
         // 创建刻度线
         const line = document.createElement('div');
@@ -110,21 +108,17 @@ function initializeScale() {
 
 // ==================== 工具函数 ====================
 
-// 将体重映射到角度（5kg对应右端135度，100kg对应左端45度）
-// 将体重映射到角度 - 顺时针增大
+// 体重→角度：5kg=135°，100kg=45°，顺时针增大
 function mapWeightToAngle(weight) {
-    // 5kg -> 45度（右端），100kg -> 135度（左端）
-    return 45 + (weight - 5) * (90 / 95);
+    return 135 - (weight - 5) * (90 / 95);
 }
-// 将角度映射到体重
-// 将角度映射到体重 - 顺时针增大
+
+// 角度→体重：135°=5kg，45°=100kg，顺时针增大
 function mapAngleToWeight(angle) {
-    // 45度 -> 5kg，135度 -> 100kg
-    const weight = 5 + (angle - 45) * (95 / 90);
+    const weight = 5 + (135 - angle) * (95 / 90);
     return Math.max(5, Math.min(100, weight));
 }
 
-// 更新刻度盘旋转
 // 更新刻度盘旋转
 function updateDialRotation() {
     const semicircleDial = document.getElementById('semicircleDial');
@@ -132,29 +126,12 @@ function updateDialRotation() {
     
     semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
     
-    // 计算当前体重对应的角度
-    const targetAngle = mapWeightToAngle(currentWeight);
-    
-    // 让该角度对准正北（90度）
-    // 旋转 = 目标位置(90°) - 当前角度
-    currentRotation = 90 - targetAngle;
+    // 旋转后，指针指向的刻度原始角度 = 90° - currentRotation
+    const originalAngle = 90 - currentRotation;
+    currentWeight = mapAngleToWeight(originalAngle);
     
     // 更新显示
-    const currentWeightDisplay = document.getElementById('currentWeight');
-    const manualWeightInput = document.getElementById('manualWeight');
-    
-    if (currentWeightDisplay) {
-        currentWeightDisplay.textContent = currentWeight.toFixed(1);
-    }
-    
-    if (manualWeightInput) {
-        manualWeightInput.value = currentWeight.toFixed(1);
-    }
-    
-    // 如果已选择产品，自动更新剂量显示
-    if (selectedProduct) {
-        updateDosageDisplay();
-    }
+    updateWeightDisplay();
 }
 
 // 更新体重显示
@@ -177,28 +154,21 @@ function updateWeightDisplay() {
 }
 
 // 设置体重 - 这个函数会被HTML中的onclick调用
-// 设置体重
-// 设置体重
 function setWeight(weight) {
     weight = parseFloat(weight);
     if (isNaN(weight)) return;
     
     currentWeight = Math.max(5, Math.min(100, weight));
     
-    // 计算当前体重对应的角度
-    const targetAngle = mapWeightToAngle(currentWeight);
+    // 旋转角度 = 90° - 体重的原始角度
+    const originalAngle = mapWeightToAngle(currentWeight);
+    currentRotation = 90 - originalAngle;
     
-    // 让该角度对准正北（90度）
-    currentRotation = 90 - targetAngle;
+    // 限制旋转范围
+    currentRotation = Math.max(-45, Math.min(45, currentRotation));
     
     // 更新刻度盘
-    const semicircleDial = document.getElementById('semicircleDial');
-    if (semicircleDial) {
-        semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
-    }
-    
-    // 更新显示
-    updateWeightDisplay();
+    updateDialRotation();
 }
 
 // ==================== 事件处理 ====================
@@ -223,6 +193,17 @@ function setupEventListeners() {
         calculateButton.addEventListener('click', calculateDosage);
     }
     
+    // 快速选择按钮事件
+    document.querySelectorAll('button[onclick^="setWeight"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const weightText = this.textContent.replace('kg', '').trim();
+            const weight = parseInt(weightText);
+            if (!isNaN(weight)) {
+                setWeight(weight);
+            }
+        });
+    });
+    
     // 设置刻度盘拖拽事件
     setupDialEvents();
 }
@@ -240,6 +221,9 @@ function setupDialEvents() {
         const centerY = rect.top + rect.height / 2;
         startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
         document.body.style.cursor = 'grabbing';
+        
+        // 拖拽时禁用过渡效果
+        this.style.transition = 'none';
     });
     
     document.addEventListener('mousemove', function(e) {
@@ -252,16 +236,46 @@ function setupDialEvents() {
         const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
         const deltaAngle = currentAngle - startAngle;
         
+        // 更新旋转角度
         currentRotation += deltaAngle * 0.5;
         currentRotation = Math.max(-45, Math.min(45, currentRotation));
         
+        // 立即应用旋转
+        semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
+        
+        // 从旋转角度计算体重
+        const originalAngle = 90 - currentRotation;
+        currentWeight = mapAngleToWeight(originalAngle);
+        
         startAngle = currentAngle;
-        updateDialRotation();
+        
+        // 更新显示（不调用updateDialRotation避免循环）
+        const currentWeightDisplay = document.getElementById('currentWeight');
+        const manualWeightInput = document.getElementById('manualWeight');
+        
+        if (currentWeightDisplay) {
+            currentWeightDisplay.textContent = currentWeight.toFixed(1);
+        }
+        
+        if (manualWeightInput) {
+            manualWeightInput.value = currentWeight.toFixed(1);
+        }
+        
+        if (selectedProduct) {
+            updateDosageDisplay();
+        }
     });
     
     document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        
         isDragging = false;
         document.body.style.cursor = 'default';
+        
+        const semicircleDial = document.getElementById('semicircleDial');
+        if (semicircleDial) {
+            semicircleDial.style.transition = 'transform 0.2s ease';
+        }
     });
     
     // 触摸事件
@@ -272,6 +286,9 @@ function setupDialEvents() {
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+        
+        // 拖拽时禁用过渡效果
+        this.style.transition = 'none';
     });
     
     document.addEventListener('touchmove', function(e) {
@@ -289,12 +306,40 @@ function setupDialEvents() {
         currentRotation += deltaAngle * 0.5;
         currentRotation = Math.max(-45, Math.min(45, currentRotation));
         
+        // 立即应用旋转
+        semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
+        
+        // 从旋转角度计算体重
+        const originalAngle = 90 - currentRotation;
+        currentWeight = mapAngleToWeight(originalAngle);
+        
         startAngle = currentAngle;
-        updateDialRotation();
+        
+        // 更新显示
+        const currentWeightDisplay = document.getElementById('currentWeight');
+        const manualWeightInput = document.getElementById('manualWeight');
+        
+        if (currentWeightDisplay) {
+            currentWeightDisplay.textContent = currentWeight.toFixed(1);
+        }
+        
+        if (manualWeightInput) {
+            manualWeightInput.value = currentWeight.toFixed(1);
+        }
+        
+        if (selectedProduct) {
+            updateDosageDisplay();
+        }
     });
     
     document.addEventListener('touchend', function() {
+        if (!isDragging) return;
+        
         isDragging = false;
+        const semicircleDial = document.getElementById('semicircleDial');
+        if (semicircleDial) {
+            semicircleDial.style.transition = 'transform 0.2s ease';
+        }
     });
 }
 
