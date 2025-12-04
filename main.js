@@ -1,16 +1,18 @@
 // D-Arteapp 医疗剂量计算器 - 主要JavaScript逻辑
+// 版本：v2.2 - 修复onclick调用问题
 
 // 全局变量
-let currentWeight = 25.0;
+let currentWeight = 35.0;  // 改为25.0以匹配HTML默认值
 let selectedProduct = null;
 let isDragging = false;
-let lastAngle = 0;
-let wheelRotation = 0;
+let startAngle = 0;
+let currentRotation = 0;
 
 // D-Arteapp 产品数据
 const darteappData = {
     id: 'darteapp',
     name: 'D-Arteapp',
+    description: '抗疟疾药物剂量计算器',
     types: [
         {
             name: 'D-ARTEPP Dispersible',
@@ -58,299 +60,337 @@ const darteappData = {
     ]
 };
 
-// 初始化应用
+// ==================== 核心初始化 ====================
+
+// 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    console.log('D-Arteapp 剂量计算器加载完成');
+    
+    // 初始化刻度盘（只在计算器界面显示时）
+    const calculatorInterface = document.getElementById('calculatorInterface');
+    if (!calculatorInterface.classList.contains('hidden')) {
+        initializeScale();
+        selectedProduct = darteappData;
+        updateWeightDisplay();
+    }
+    
+    // 设置事件监听器
     setupEventListeners();
-    createWeightScale();
-    animatePageLoad();
 });
 
-// 初始化应用
-function initializeApp() {
-    console.log('D-Arteapp 剂量计算器初始化...');
+// 初始化刻度盘
+// 初始化刻度盘
+function initializeScale() {
+    const scaleContainer = document.getElementById('scaleContainer');
+    if (!scaleContainer) return;
+    
+    scaleContainer.innerHTML = '';
+    
+    // 创建刻度线和数字（从右到左：5-100kg）
+    for (let kg = 5; kg <= 100; kg += 2.5) {
+        // === 修改这里：顺时针增大，5kg在右端(45°)，100kg在左端(135°) ===
+        const angle = 45 + (kg - 5) * (90 / 95); // 5kg->45°, 100kg->135°
+        
+        // 创建刻度线
+        const line = document.createElement('div');
+        line.className = kg % 10 === 0 ? 'scale-line major' : 'scale-line minor';
+        line.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        scaleContainer.appendChild(line);
+        
+        // 创建数字标签（每5kg显示一个数字）
+        if (kg % 5 === 0) {
+            const number = document.createElement('div');
+            number.className = 'scale-number';
+            number.textContent = kg;
+            number.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+            scaleContainer.appendChild(number);
+        }
+    }
+}
+
+// ==================== 工具函数 ====================
+
+// 将体重映射到角度（5kg对应右端135度，100kg对应左端45度）
+// 将体重映射到角度 - 顺时针增大
+function mapWeightToAngle(weight) {
+    // 5kg -> 45度（右端），100kg -> 135度（左端）
+    return 45 + (weight - 5) * (90 / 95);
+}
+// 将角度映射到体重
+// 将角度映射到体重 - 顺时针增大
+function mapAngleToWeight(angle) {
+    // 45度 -> 5kg，135度 -> 100kg
+    const weight = 5 + (angle - 45) * (95 / 90);
+    return Math.max(5, Math.min(100, weight));
+}
+
+// 更新刻度盘旋转
+// 更新刻度盘旋转
+function updateDialRotation() {
+    const semicircleDial = document.getElementById('semicircleDial');
+    if (!semicircleDial) return;
+    
+    semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
+    
+    // 计算当前体重对应的角度
+    const targetAngle = mapWeightToAngle(currentWeight);
+    
+    // 让该角度对准正北（90度）
+    // 旋转 = 目标位置(90°) - 当前角度
+    currentRotation = 90 - targetAngle;
+    
+    // 更新显示
+    const currentWeightDisplay = document.getElementById('currentWeight');
+    const manualWeightInput = document.getElementById('manualWeight');
+    
+    if (currentWeightDisplay) {
+        currentWeightDisplay.textContent = currentWeight.toFixed(1);
+    }
+    
+    if (manualWeightInput) {
+        manualWeightInput.value = currentWeight.toFixed(1);
+    }
+    
+    // 如果已选择产品，自动更新剂量显示
+    if (selectedProduct) {
+        updateDosageDisplay();
+    }
+}
+
+// 更新体重显示
+function updateWeightDisplay() {
+    const currentWeightDisplay = document.getElementById('currentWeight');
+    const manualWeightInput = document.getElementById('manualWeight');
+    
+    if (currentWeightDisplay) {
+        currentWeightDisplay.textContent = currentWeight.toFixed(1);
+    }
+    
+    if (manualWeightInput) {
+        manualWeightInput.value = currentWeight.toFixed(1);
+    }
+    
+    // 如果已选择产品，自动更新剂量显示
+    if (selectedProduct) {
+        updateDosageDisplay();
+    }
+}
+
+// 设置体重 - 这个函数会被HTML中的onclick调用
+// 设置体重
+// 设置体重
+function setWeight(weight) {
+    weight = parseFloat(weight);
+    if (isNaN(weight)) return;
+    
+    currentWeight = Math.max(5, Math.min(100, weight));
+    
+    // 计算当前体重对应的角度
+    const targetAngle = mapWeightToAngle(currentWeight);
+    
+    // 让该角度对准正北（90度）
+    currentRotation = 90 - targetAngle;
+    
+    // 更新刻度盘
+    const semicircleDial = document.getElementById('semicircleDial');
+    if (semicircleDial) {
+        semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
+    }
+    
+    // 更新显示
     updateWeightDisplay();
 }
 
+// ==================== 事件处理 ====================
+
 // 设置事件监听器
 function setupEventListeners() {
-    // 产品选择
-    document.getElementById('backToProduct').addEventListener('click', showProductSelection);
-    document.getElementById('calculateBtn').addEventListener('click', calculateDosage);
-    
     // 手动体重输入
-    document.getElementById('manualWeight').addEventListener('input', handleManualWeightInput);
+    const manualWeightInput = document.getElementById('manualWeight');
+    if (manualWeightInput) {
+        manualWeightInput.addEventListener('input', handleManualWeightInput);
+    }
     
-    // 剂量盘事件 - 使用passive: false来允许preventDefault
-    const doseWheel = document.getElementById('doseWheel');
+    // 返回产品选择按钮
+    const backButton = document.getElementById('backToProduct');
+    if (backButton) {
+        backButton.addEventListener('click', showProductSelection);
+    }
     
-    // 鼠标事件
-    doseWheel.addEventListener('mousedown', startDrag, { passive: false });
-    document.addEventListener('mousemove', drag, { passive: false });
-    document.addEventListener('mouseup', endDrag);
+    // 计算按钮
+    const calculateButton = document.getElementById('calculateBtn');
+    if (calculateButton) {
+        calculateButton.addEventListener('click', calculateDosage);
+    }
     
-    // 触摸事件
-    doseWheel.addEventListener('touchstart', startDrag, { passive: false });
-    document.addEventListener('touchmove', drag, { passive: false });
-    document.addEventListener('touchend', endDrag);
-    
-    // 滚轮事件
-    doseWheel.addEventListener('wheel', handleWheel, { passive: false });
+    // 设置刻度盘拖拽事件
+    setupDialEvents();
 }
 
-// 产品选择
-function selectProduct(productId) {
-    if (productId === 'darteapp') {
+// 设置刻度盘拖拽事件
+function setupDialEvents() {
+    const semicircleDial = document.getElementById('semicircleDial');
+    if (!semicircleDial) return;
+    
+    // 鼠标事件
+    semicircleDial.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        const rect = this.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+        document.body.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        const semicircleDial = document.getElementById('semicircleDial');
+        const rect = semicircleDial.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+        const deltaAngle = currentAngle - startAngle;
+        
+        currentRotation += deltaAngle * 0.5;
+        currentRotation = Math.max(-45, Math.min(45, currentRotation));
+        
+        startAngle = currentAngle;
+        updateDialRotation();
+    });
+    
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+        document.body.style.cursor = 'default';
+    });
+    
+    // 触摸事件
+    semicircleDial.addEventListener('touchstart', function(e) {
+        isDragging = true;
+        const touch = e.touches[0];
+        const rect = this.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        startAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+    });
+    
+    document.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const semicircleDial = document.getElementById('semicircleDial');
+        const rect = semicircleDial.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+        const deltaAngle = currentAngle - startAngle;
+        
+        currentRotation += deltaAngle * 0.5;
+        currentRotation = Math.max(-45, Math.min(45, currentRotation));
+        
+        startAngle = currentAngle;
+        updateDialRotation();
+    });
+    
+    document.addEventListener('touchend', function() {
+        isDragging = false;
+    });
+}
+
+// 处理手动体重输入
+function handleManualWeightInput(event) {
+    const weight = parseFloat(event.target.value);
+    if (!isNaN(weight) && weight >= 5 && weight <= 100) {
+        setWeight(weight);
+    } else {
+        event.target.value = currentWeight.toFixed(1);
+    }
+}
+
+// 产品选择功能 - 这个函数会被HTML中的onclick调用
+function selectProduct(product) {
+    if (product === 'darteapp') {
         selectedProduct = darteappData;
         showCalculatorInterface();
     }
 }
 
-// 显示产品选择界面
-function showProductSelection() {
-    document.getElementById('productSelection').classList.remove('hidden');
-    document.getElementById('calculatorInterface').classList.add('hidden');
-    selectedProduct = null;
-}
-
 // 显示计算器界面
 function showCalculatorInterface() {
-    document.getElementById('productSelection').classList.add('hidden');
-    document.getElementById('calculatorInterface').classList.remove('hidden');
+    const productSelection = document.getElementById('productSelection');
+    const calculatorInterface = document.getElementById('calculatorInterface');
     
-    // 界面切换动画
-    anime({
-        targets: '#calculatorInterface',
-        opacity: [0, 1],
-        translateY: [30, 0],
-        duration: 600,
-        easing: 'easeOutQuad'
-    });
-    
-    // 自动计算初始体重
-    calculateDosage();
-}
-
-// 创建体重刻度盘 - 修复刻度和转盘脱离问题
-function createWeightScale() {
-    const scale = document.getElementById('weightScale');
-    const maxWeight = 100;
-    const minWeight = 5;
-    const majorStep = 5;
-    const minorStep = 1;
-    
-    // 清除现有刻度
-    scale.innerHTML = '';
-    
-    // 创建主刻度和数字
-    for (let weight = minWeight; weight <= maxWeight; weight += majorStep) {
-        const angle = ((weight - minWeight) / (maxWeight - minWeight)) * 180; // 半圆180度
+    if (productSelection && calculatorInterface) {
+        productSelection.classList.add('hidden');
+        calculatorInterface.classList.remove('hidden');
         
-        // 创建主刻度线
-        const mark = document.createElement('div');
-        mark.className = 'scale-mark major';
-        mark.style.transform = `rotate(${angle}deg)`;
-        scale.appendChild(mark);
+        // 初始化刻度盘
+        initializeScale();
         
-        // 创建刻度数字
-        const number = document.createElement('div');
-        number.className = 'scale-number';
-        number.textContent = weight;
-        number.style.transform = `rotate(${angle}deg) translate(0, -120px) rotate(${-angle}deg)`;
-        scale.appendChild(number);
+        // 设置初始体重
+        setWeight(35);
         
-        // 创建次刻度线（每1kg）
-        if (weight < maxWeight) {
-            for (let minor = weight + minorStep; minor < Math.min(weight + majorStep, maxWeight + 1); minor += minorStep) {
-                if (minor % 5 !== 0) { // 跳过主刻度位置
-                    const minorAngle = ((minor - minWeight) / (maxWeight - minWeight)) * 180;
-                    const minorMark = document.createElement('div');
-                    minorMark.className = 'scale-mark minor';
-                    minorMark.style.transform = `rotate(${minorAngle}deg)`;
-                    scale.appendChild(minorMark);
-                }
+        // 添加选中效果
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.classList.remove('selected');
+            const title = card.querySelector('h3');
+            if (title && title.textContent === 'D-Arteapp') {
+                card.classList.add('selected');
             }
-        }
-    }
-}
-
-// 开始拖拽
-function startDrag(event) {
-    event.preventDefault();
-    isDragging = true;
-    
-    const rect = document.getElementById('doseWheel').getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
-    
-    lastAngle = Math.atan2(clientY - centerY, clientX - centerX);
-    
-    document.getElementById('doseWheel').style.cursor = 'grabbing';
-    
-    // 添加活动状态视觉反馈
-    document.getElementById('doseWheel').classList.add('pulse-glow');
-}
-
-// 拖拽中
-function drag(event) {
-    if (!isDragging) return;
-    event.preventDefault();
-    
-    const rect = document.getElementById('doseWheel').getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
-    
-    const currentAngle = Math.atan2(clientY - centerY, clientX - centerX);
-    const angleDiff = currentAngle - lastAngle;
-    
-    // 更新旋转角度
-    wheelRotation += angleDiff * (180 / Math.PI);
-    
-    // 更新体重值 - 半圆范围0-180度对应5-100kg
-    const weightRange = 100 - 5; // 5-100kg
-    const normalizedRotation = ((wheelRotation % 180) + 180) % 180; // 限制在0-180度
-    currentWeight = 5 + (normalizedRotation / 180) * weightRange;
-    
-    // 限制体重范围
-    currentWeight = Math.max(5, Math.min(100, currentWeight));
-    
-    updateWeightDisplay();
-    updateDosageDisplay();
-    
-    lastAngle = currentAngle;
-}
-
-// 结束拖拽
-function endDrag(event) {
-    if (!isDragging) return;
-    
-    isDragging = false;
-    document.getElementById('doseWheel').style.cursor = 'grab';
-    document.getElementById('doseWheel').classList.remove('pulse-glow');
-    
-    // 添加惯性效果
-    addInertia();
-}
-
-// 处理滚轮
-function handleWheel(event) {
-    event.preventDefault();
-    
-    const delta = event.deltaY > 0 ? 1 : -1;
-    currentWeight += delta * 0.5;
-    
-    // 限制体重范围
-    currentWeight = Math.max(5, Math.min(100, currentWeight));
-    
-    updateWeightDisplay();
-    updateDosageDisplay();
-    
-    // 更新旋转角度 - 半圆范围
-    const weightRange = 100 - 5;
-    const normalizedWeight = (currentWeight - 5) / weightRange;
-    wheelRotation = normalizedWeight * 180; // 半圆180度
-}
-
-// 添加惯性效果
-function addInertia() {
-    let velocity = 0.5; // 惯性速度
-    const friction = 0.95; // 摩擦系数
-    
-    function animate() {
-        if (Math.abs(velocity) > 0.01) {
-            wheelRotation += velocity;
-            velocity *= friction;
-            
-            // 更新体重值 - 半圆范围
-            const weightRange = 100 - 5;
-            const normalizedRotation = ((wheelRotation % 180) + 180) % 180;
-            currentWeight = 5 + (normalizedRotation / 180) * weightRange;
-            currentWeight = Math.max(5, Math.min(100, currentWeight));
-            
-            updateWeightDisplay();
-            updateDosageDisplay();
-            
-            requestAnimationFrame(animate);
-        }
-    }
-    
-    animate();
-}
-
-// 处理手动体重输入
-function handleManualWeightInput(event) {
-    const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value >= 5 && value <= 100) {
-        currentWeight = value;
-        updateWeightDisplay();
-        updateDosageDisplay();
+        });
         
-        // 更新旋转角度 - 半圆范围
-        const weightRange = 100 - 5;
-        const normalizedWeight = (currentWeight - 5) / weightRange;
-        wheelRotation = normalizedWeight * 180; // 半圆180度
+        // 启用计算按钮
+        const calculateButton = document.getElementById('calculateBtn');
+        if (calculateButton) {
+            calculateButton.disabled = false;
+        }
     }
 }
 
-// 设置体重
-function setWeight(weight) {
-    currentWeight = weight;
-    updateWeightDisplay();
-    updateDosageDisplay();
+// 显示产品选择界面
+function showProductSelection() {
+    const productSelection = document.getElementById('productSelection');
+    const calculatorInterface = document.getElementById('calculatorInterface');
     
-    // 更新旋转角度 - 半圆范围
-    const weightRange = 100 - 5;
-    const normalizedWeight = (currentWeight - 5) / weightRange;
-    wheelRotation = normalizedWeight * 180; // 半圆180度
-    
-    document.getElementById('manualWeight').value = weight;
-    
-    // 添加设置动画
-    anime({
-        targets: '#doseWheel',
-        rotate: wheelRotation,
-        duration: 300,
-        easing: 'easeOutQuad'
-    });
+    if (productSelection && calculatorInterface) {
+        productSelection.classList.remove('hidden');
+        calculatorInterface.classList.add('hidden');
+        selectedProduct = null;
+        
+        // 移除选中效果
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+    }
 }
 
-// 更新体重显示
-function updateWeightDisplay() {
-    document.getElementById('currentWeight').textContent = currentWeight.toFixed(1);
-    document.getElementById('manualWeight').value = currentWeight.toFixed(1);
-    
-    // 更新剂量盘旋转 - 确保刻度跟随转盘
-    const wheel = document.getElementById('doseWheel');
-    wheel.style.transform = `rotate(${wheelRotation}deg)`;
-    
-    // 同时更新刻度容器
-    const scale = document.getElementById('weightScale');
-    scale.style.transform = `rotate(${wheelRotation}deg)`;
-}
+// ==================== 剂量计算 ====================
 
 // 计算剂量
 function calculateDosage() {
-    if (!selectedProduct) return;
+    if (!selectedProduct) {
+        alert('请先选择产品');
+        return;
+    }
     
     updateDosageDisplay();
     
-    // 计算按钮动画
+    // 计算按钮动画效果
     const btn = document.getElementById('calculateBtn');
-    btn.textContent = '计算完成 ✓';
-    btn.classList.add('bg-green-600');
-    btn.classList.remove('medical-gradient');
-    
-    setTimeout(() => {
-        btn.textContent = '重新计算';
-        btn.classList.remove('bg-green-600');
-        btn.classList.add('medical-gradient');
-    }, 2000);
+    if (btn) {
+        const originalText = btn.textContent;
+        
+        btn.textContent = '计算完成 ✓';
+        btn.classList.remove('medical-gradient');
+        btn.classList.add('bg-green-600');
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-green-600');
+            btn.classList.add('medical-gradient');
+        }, 1500);
+    }
     
     // 保存计算历史
     saveCalculationHistory();
@@ -358,79 +398,93 @@ function calculateDosage() {
 
 // 更新剂量显示
 function updateDosageDisplay() {
+    const dosageResult = document.getElementById('dosageResult');
+    if (!dosageResult) return;
+    
+    // 如果没有选择产品，显示默认提示
+    if (!selectedProduct) {
+        dosageResult.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <p class="text-lg font-medium mb-2">请选择体重</p>
+                <p class="text-sm">滑动左侧刻度盘来设置患者体重</p>
+            </div>
+        `;
+        return;
+    }
+    
     const result = findDosageRecommendation(currentWeight);
     
     if (!result) {
-        document.getElementById('dosageResult').innerHTML = `
+        dosageResult.innerHTML = `
             <div class="text-center text-red-500 py-8">
                 <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                 </svg>
                 <p class="font-medium">体重超出范围</p>
-                <p class="text-sm">请检查体重输入是否正确</p>
+                <p class="text-sm">请检查体重输入是否正确 (5-100kg)</p>
             </div>
         `;
         return;
     }
     
     const dosageHtml = result.dosages.map(dosage => `
-        <div class="dosage-result rounded-lg p-4 mb-4">
-            <div class="flex justify-between items-start mb-2">
-                <h4 class="font-semibold text-gray-800">${dosage.type}</h4>
-                <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">${dosage.specification}</span>
+        <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <span class="font-semibold text-gray-800">${dosage.type}</span>
+                    <span class="ml-2 text-sm text-gray-600">${dosage.specification}</span>
+                </div>
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-bold">${dosage.count} 片</span>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <div class="text-sm text-gray-600">用量</div>
-                    <div class="text-lg font-bold number-display text-blue-800">${dosage.count} 粒</div>
-                </div>
-                <div>
-                    <div class="text-sm text-gray-600">规格</div>
-                    <div class="text-lg font-bold number-display text-green-800">${dosage.specification}</div>
-                </div>
+            <div class="text-sm text-gray-600">
+                推荐用量：每次 ${dosage.count} 片，每日2次，连续3日
             </div>
         </div>
     `).join('');
     
-    document.getElementById('dosageResult').innerHTML = `
-        <div class="mb-4">
-            <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                <div class="text-center">
-                    <div class="text-sm text-blue-600 font-medium mb-1">患者体重</div>
-                    <div class="text-3xl font-bold number-display text-blue-800">${currentWeight.toFixed(1)} kg</div>
+    dosageResult.innerHTML = `
+        <div class="dosage-result p-6 rounded-lg">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div class="mb-4 md:mb-0">
+                    <h4 class="text-lg font-semibold text-gray-800">基于体重 ${currentWeight.toFixed(1)}kg 的推荐剂量</h4>
+                    <p class="text-sm text-gray-600 mt-1">${selectedProduct.name} - 三日疗程方案</p>
+                </div>
+                <div class="text-center md:text-right">
+                    <div class="text-2xl font-bold number-display text-blue-600">${currentWeight.toFixed(1)} kg</div>
+                    <div class="text-sm text-gray-500">患者体重</div>
                 </div>
             </div>
             
-            <div class="mb-4">
-                <h4 class="font-semibold text-gray-800 mb-3">推荐用药方案（三日疗程）</h4>
+            <div class="space-y-3 mb-6">
+                <h5 class="font-medium text-gray-700">推荐用药方案：</h5>
                 ${dosageHtml}
             </div>
             
-            <div class="bg-amber-50 rounded-lg p-4">
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
                 <div class="flex items-start">
-                    <svg class="w-5 h-5 text-amber-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <div>
-                        <div class="text-sm font-medium text-amber-800">用药提醒</div>
-                        <div class="text-xs text-amber-700 mt-1">
-                            请遵医嘱使用，严格按照推荐剂量服用。如出现不良反应请及时就医。
-                        </div>
+                        <p class="text-sm text-blue-800">
+                            <strong>用药说明：</strong> 
+                            首次给药后，每12小时给药一次，连续3日。
+                            请严格遵医嘱使用，如出现不良反应请及时就医。
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     `;
     
-    // 结果动画
-    anime({
-        targets: '.dosage-result',
-        translateX: [-30, 0],
-        opacity: [0, 1],
-        delay: anime.stagger(100),
-        duration: 500,
-        easing: 'easeOutQuad'
-    });
+    // 添加脉冲效果到计算按钮
+    const calculateButton = document.getElementById('calculateBtn');
+    if (calculateButton) {
+        calculateButton.classList.add('pulse-glow');
+    }
 }
 
 // 查找剂量推荐
@@ -480,7 +534,7 @@ function findDosageRecommendation(weight) {
 // 保存计算历史
 function saveCalculationHistory() {
     const result = findDosageRecommendation(currentWeight);
-    if (!result) return;
+    if (!result || !selectedProduct) return;
     
     const record = {
         id: Date.now().toString(),
@@ -494,7 +548,11 @@ function saveCalculationHistory() {
     let history = [];
     const savedHistory = localStorage.getItem('darteappCalculatorHistory');
     if (savedHistory) {
-        history = JSON.parse(savedHistory);
+        try {
+            history = JSON.parse(savedHistory);
+        } catch (e) {
+            console.warn('解析历史记录失败:', e);
+        }
     }
     
     // 添加到历史记录开头
@@ -506,42 +564,15 @@ function saveCalculationHistory() {
     }
     
     // 保存到本地存储
-    localStorage.setItem('darteappCalculatorHistory', JSON.stringify(history));
+    try {
+        localStorage.setItem('darteappCalculatorHistory', JSON.stringify(history));
+    } catch (e) {
+        console.warn('保存历史记录失败:', e);
+    }
 }
 
-// 页面加载动画
-function animatePageLoad() {
-    // 导航栏动画
-    anime({
-        targets: 'nav',
-        translateY: [-50, 0],
-        opacity: [0, 1],
-        duration: 800,
-        easing: 'easeOutQuad'
-    });
-    
-    // 产品卡片动画
-    anime({
-        targets: '.product-card',
-        translateY: [50, 0],
-        opacity: [0, 1],
-        delay: anime.stagger(200, {start: 400}),
-        duration: 600,
-        easing: 'easeOutQuad'
-    });
-    
-    // 标题动画
-    anime({
-        targets: '.title-font',
-        scale: [0.9, 1],
-        opacity: [0, 1],
-        delay: 200,
-        duration: 800,
-        easing: 'easeOutQuad'
-    });
-}
+// ==================== 辅助函数 ====================
 
-// 工具函数
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
@@ -549,3 +580,11 @@ function formatNumber(num) {
 function roundToDecimal(num, decimals) {
     return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
 }
+
+// ==================== 全局导出 ====================
+// 重要：这些函数必须导出到window对象，才能被HTML中的onclick调用
+
+window.selectProduct = selectProduct;
+window.setWeight = setWeight;
+
+console.log('D-Arteapp计算器脚本已加载');
