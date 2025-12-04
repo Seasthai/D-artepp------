@@ -81,18 +81,21 @@ function setupEventListeners() {
     // 手动体重输入
     document.getElementById('manualWeight').addEventListener('input', handleManualWeightInput);
     
-    // 剂量盘事件
+    // 剂量盘事件 - 使用passive: false来允许preventDefault
     const doseWheel = document.getElementById('doseWheel');
-    doseWheel.addEventListener('mousedown', startDrag);
-    doseWheel.addEventListener('mousemove', drag);
-    doseWheel.addEventListener('mouseup', endDrag);
-    doseWheel.addEventListener('mouseleave', endDrag);
-    doseWheel.addEventListener('wheel', handleWheel);
+    
+    // 鼠标事件
+    doseWheel.addEventListener('mousedown', startDrag, { passive: false });
+    document.addEventListener('mousemove', drag, { passive: false });
+    document.addEventListener('mouseup', endDrag);
     
     // 触摸事件
-    doseWheel.addEventListener('touchstart', startDrag);
-    doseWheel.addEventListener('touchmove', drag);
-    doseWheel.addEventListener('touchend', endDrag);
+    doseWheel.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+    
+    // 滚轮事件
+    doseWheel.addEventListener('wheel', handleWheel, { passive: false });
 }
 
 // 产品选择
@@ -128,18 +131,24 @@ function showCalculatorInterface() {
     calculateDosage();
 }
 
-// 创建体重刻度盘
+// 创建体重刻度盘 - 修复刻度和转盘脱离问题
 function createWeightScale() {
     const scale = document.getElementById('weightScale');
     const maxWeight = 100;
     const minWeight = 5;
-    const step = 5;
+    const majorStep = 5;
+    const minorStep = 1;
     
-    for (let weight = minWeight; weight <= maxWeight; weight += step) {
-        // 创建刻度线
+    // 清除现有刻度
+    scale.innerHTML = '';
+    
+    // 创建主刻度和数字
+    for (let weight = minWeight; weight <= maxWeight; weight += majorStep) {
+        const angle = ((weight - minWeight) / (maxWeight - minWeight)) * 180; // 半圆180度
+        
+        // 创建主刻度线
         const mark = document.createElement('div');
-        mark.className = 'scale-mark';
-        const angle = ((weight - minWeight) / (maxWeight - minWeight)) * 360;
+        mark.className = 'scale-mark major';
         mark.style.transform = `rotate(${angle}deg)`;
         scale.appendChild(mark);
         
@@ -147,8 +156,21 @@ function createWeightScale() {
         const number = document.createElement('div');
         number.className = 'scale-number';
         number.textContent = weight;
-        number.style.transform = `rotate(${angle}deg) translate(0, -125px) rotate(${-angle}deg)`;
+        number.style.transform = `rotate(${angle}deg) translate(0, -120px) rotate(${-angle}deg)`;
         scale.appendChild(number);
+        
+        // 创建次刻度线（每1kg）
+        if (weight < maxWeight) {
+            for (let minor = weight + minorStep; minor < Math.min(weight + majorStep, maxWeight + 1); minor += minorStep) {
+                if (minor % 5 !== 0) { // 跳过主刻度位置
+                    const minorAngle = ((minor - minWeight) / (maxWeight - minWeight)) * 180;
+                    const minorMark = document.createElement('div');
+                    minorMark.className = 'scale-mark minor';
+                    minorMark.style.transform = `rotate(${minorAngle}deg)`;
+                    scale.appendChild(minorMark);
+                }
+            }
+        }
     }
 }
 
@@ -157,7 +179,7 @@ function startDrag(event) {
     event.preventDefault();
     isDragging = true;
     
-    const rect = event.currentTarget.getBoundingClientRect();
+    const rect = document.getElementById('doseWheel').getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     
@@ -167,6 +189,9 @@ function startDrag(event) {
     lastAngle = Math.atan2(clientY - centerY, clientX - centerX);
     
     document.getElementById('doseWheel').style.cursor = 'grabbing';
+    
+    // 添加活动状态视觉反馈
+    document.getElementById('doseWheel').classList.add('pulse-glow');
 }
 
 // 拖拽中
@@ -187,10 +212,10 @@ function drag(event) {
     // 更新旋转角度
     wheelRotation += angleDiff * (180 / Math.PI);
     
-    // 更新体重值
+    // 更新体重值 - 半圆范围0-180度对应5-100kg
     const weightRange = 100 - 5; // 5-100kg
-    const normalizedRotation = ((wheelRotation % 360) + 360) % 360;
-    currentWeight = 5 + (normalizedRotation / 360) * weightRange;
+    const normalizedRotation = ((wheelRotation % 180) + 180) % 180; // 限制在0-180度
+    currentWeight = 5 + (normalizedRotation / 180) * weightRange;
     
     // 限制体重范围
     currentWeight = Math.max(5, Math.min(100, currentWeight));
@@ -207,6 +232,7 @@ function endDrag(event) {
     
     isDragging = false;
     document.getElementById('doseWheel').style.cursor = 'grab';
+    document.getElementById('doseWheel').classList.remove('pulse-glow');
     
     // 添加惯性效果
     addInertia();
@@ -225,10 +251,10 @@ function handleWheel(event) {
     updateWeightDisplay();
     updateDosageDisplay();
     
-    // 更新旋转角度
+    // 更新旋转角度 - 半圆范围
     const weightRange = 100 - 5;
     const normalizedWeight = (currentWeight - 5) / weightRange;
-    wheelRotation = normalizedWeight * 360;
+    wheelRotation = normalizedWeight * 180; // 半圆180度
 }
 
 // 添加惯性效果
@@ -241,10 +267,10 @@ function addInertia() {
             wheelRotation += velocity;
             velocity *= friction;
             
-            // 更新体重值
+            // 更新体重值 - 半圆范围
             const weightRange = 100 - 5;
-            const normalizedRotation = ((wheelRotation % 360) + 360) % 360;
-            currentWeight = 5 + (normalizedRotation / 360) * weightRange;
+            const normalizedRotation = ((wheelRotation % 180) + 180) % 180;
+            currentWeight = 5 + (normalizedRotation / 180) * weightRange;
             currentWeight = Math.max(5, Math.min(100, currentWeight));
             
             updateWeightDisplay();
@@ -265,10 +291,10 @@ function handleManualWeightInput(event) {
         updateWeightDisplay();
         updateDosageDisplay();
         
-        // 更新旋转角度
+        // 更新旋转角度 - 半圆范围
         const weightRange = 100 - 5;
         const normalizedWeight = (currentWeight - 5) / weightRange;
-        wheelRotation = normalizedWeight * 360;
+        wheelRotation = normalizedWeight * 180; // 半圆180度
     }
 }
 
@@ -278,12 +304,20 @@ function setWeight(weight) {
     updateWeightDisplay();
     updateDosageDisplay();
     
-    // 更新旋转角度
+    // 更新旋转角度 - 半圆范围
     const weightRange = 100 - 5;
     const normalizedWeight = (currentWeight - 5) / weightRange;
-    wheelRotation = normalizedWeight * 360;
+    wheelRotation = normalizedWeight * 180; // 半圆180度
     
     document.getElementById('manualWeight').value = weight;
+    
+    // 添加设置动画
+    anime({
+        targets: '#doseWheel',
+        rotate: wheelRotation,
+        duration: 300,
+        easing: 'easeOutQuad'
+    });
 }
 
 // 更新体重显示
@@ -291,9 +325,13 @@ function updateWeightDisplay() {
     document.getElementById('currentWeight').textContent = currentWeight.toFixed(1);
     document.getElementById('manualWeight').value = currentWeight.toFixed(1);
     
-    // 更新剂量盘旋转
+    // 更新剂量盘旋转 - 确保刻度跟随转盘
     const wheel = document.getElementById('doseWheel');
     wheel.style.transform = `rotate(${wheelRotation}deg)`;
+    
+    // 同时更新刻度容器
+    const scale = document.getElementById('weightScale');
+    scale.style.transform = `rotate(${wheelRotation}deg)`;
 }
 
 // 计算剂量
@@ -313,6 +351,9 @@ function calculateDosage() {
         btn.classList.remove('bg-green-600');
         btn.classList.add('medical-gradient');
     }, 2000);
+    
+    // 保存计算历史
+    saveCalculationHistory();
 }
 
 // 更新剂量显示
@@ -434,6 +475,38 @@ function findDosageRecommendation(weight) {
         weight: weight,
         dosages: dosages
     };
+}
+
+// 保存计算历史
+function saveCalculationHistory() {
+    const result = findDosageRecommendation(currentWeight);
+    if (!result) return;
+    
+    const record = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        product: selectedProduct.name,
+        weight: currentWeight,
+        dosages: result.dosages
+    };
+    
+    // 获取现有历史
+    let history = [];
+    const savedHistory = localStorage.getItem('darteappCalculatorHistory');
+    if (savedHistory) {
+        history = JSON.parse(savedHistory);
+    }
+    
+    // 添加到历史记录开头
+    history.unshift(record);
+    
+    // 限制历史记录数量（最多100条）
+    if (history.length > 100) {
+        history = history.slice(0, 100);
+    }
+    
+    // 保存到本地存储
+    localStorage.setItem('darteappCalculatorHistory', JSON.stringify(history));
 }
 
 // 页面加载动画
