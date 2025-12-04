@@ -86,17 +86,17 @@ function initializeScale() {
     scaleContainer.innerHTML = '';
     
     // 创建刻度线和数字（顺时针增大：5kg在左端135°，100kg在右端45°）
-    for (let kg = 5; kg <= 100; kg += 2.5) {
+    for (let kg = 5; kg <= 100; kg += 1) {
         const angle = mapWeightToAngle(kg);
         
         // 创建刻度线
         const line = document.createElement('div');
-        line.className = kg % 10 === 0 ? 'scale-line major' : 'scale-line minor';
+        line.className = kg % 5 === 0 ? 'scale-line major' : 'scale-line minor';
         line.style.transform = `translateX(-50%) rotate(${angle}deg)`;
         scaleContainer.appendChild(line);
         
         // 创建数字标签（每5kg显示一个数字）
-        if (kg % 10 === 0) {
+        if (kg % 10 === 0 || kg === 5) {
             const number = document.createElement('div');
             number.className = 'scale-number';
             number.textContent = kg;
@@ -110,12 +110,12 @@ function initializeScale() {
 
 // 体重→角度：5kg=135°，100kg=45°，顺时针增大
 function mapWeightToAngle(weight) {
-    return 0 + (weight - 5) * (90 / 95);
+    return 0 + (weight) * (171 / 95);
 }
 
 // 角度→体重：135°=5kg，45°=100kg，顺时针增大
 function mapAngleToWeight(angle) {
-    const weight = 5 + (angle - 0) * (95 / 90);
+    const weight = (angle - 0) * (95 / 171);
     return Math.max(5, Math.min(100, weight));
 }
 
@@ -165,7 +165,7 @@ function setWeight(weight) {
     currentRotation = 0 - originalAngle;
     
     // 限制旋转范围
-    currentRotation = Math.max(-90, Math.min(0, currentRotation));
+    currentRotation = Math.max(-180, Math.min(-9, currentRotation));
     
     // 更新刻度盘
     updateDialRotation();
@@ -238,7 +238,7 @@ function setupDialEvents() {
         
         // 更新旋转角度
         currentRotation += deltaAngle * 0.5;
-        currentRotation = Math.max(-90, Math.min(0, currentRotation));
+        currentRotation = Math.max(-180, Math.min(-9, currentRotation));
         
         // 立即应用旋转
         semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
@@ -304,7 +304,7 @@ function setupDialEvents() {
         const deltaAngle = currentAngle - startAngle;
         
         currentRotation += deltaAngle * 0.5;
-        currentRotation = Math.max(-90, Math.min(0, currentRotation));
+        currentRotation = Math.max(-180, Math.min(-9, currentRotation));
         
         // 立即应用旋转
         semicircleDial.style.transform = `rotate(${currentRotation}deg)`;
