@@ -412,16 +412,17 @@
                 </div>
                 
                 <!-- Artesun 产品卡片 -->
-                <div class="product-card glass-card rounded-xl p-6 cursor-pointer coming-soon">
+                <div class="product-card glass-card rounded-xl p-6 cursor-pointer" onclick="selectProduct('artesun')">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div class="w-16 h-16 medical-gradient rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">Artesun</h3>
                         <p class="text-gray-600 mb-4" data-i18n="artesunDesc">Artesunate for Injection</p>
-                        <div class="text-sm text-gray-500 font-medium" data-i18n="comingSoon">Coming Soon</div>                </div>
+                        <!-- 移除"Coming Soon"标签 -->
+                    </div>
                 </div>
                 
                 <!-- Argesun 产品卡片 -->
