@@ -1,5 +1,5 @@
 // D-Arteapp 医疗剂量计算器 - 主要JavaScript逻辑
-// 版本：v5.1 - 多语言支持修复版
+// 版本：v5.2 - 修复占位符问题版
 
 // 全局变量
 let currentWeight = 35.0;
@@ -758,6 +758,20 @@ function calculateDosage() {
     saveCalculationHistory();
 }
 
+// 辅助函数：处理剂量标题中的占位符
+function getDosageResultTitle(weight) {
+    const titleTemplate = translations[currentLanguage].dosageResultTitle || 'Recommended dosage based on weight';
+    
+    // 检查标题模板中是否包含 {weight} 占位符
+    if (titleTemplate.includes('{weight}')) {
+        // 替换占位符为实际体重
+        return titleTemplate.replace('{weight}', weight.toFixed(1));
+    } else {
+        // 没有占位符，直接返回标题
+        return titleTemplate;
+    }
+}
+
 // 更新剂量显示
 function updateDosageDisplay() {
     const dosageResult = document.getElementById('dosageResult');
@@ -826,11 +840,14 @@ function updateDosageDisplay() {
         </div>
     `).join('');
     
+    // 使用辅助函数获取处理后的标题
+    const dosageTitle = getDosageResultTitle(currentWeight);
+    
     dosageResult.innerHTML = `
         <div class="dosage-result p-6 rounded-lg">
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div class="mb-4 md:mb-0">
-                    <h4 class="text-lg font-semibold text-gray-800">${translations[currentLanguage].dosageResultTitle || 'Recommended dosage based on weight'} ${currentWeight.toFixed(1)}kg</h4>
+                    <h4 class="text-lg font-semibold text-gray-800">${dosageTitle}</h4>
                     <p class="text-sm text-gray-600 mt-1">${selectedProduct.name} - ${translations[currentLanguage].dosageResultSubtitle || 'Three-day treatment plan'}</p>
                 </div>
                 <div class="text-center md:text-right">
