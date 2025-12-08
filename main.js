@@ -1,5 +1,5 @@
 // Medical Dosage Calculator - 主要JavaScript逻辑
-// 版本：v8.3 - 优化规格组合算法，智能选择最佳规格
+// 版本：v8.4 - 修复按钮语言切换问题
 // 日期：2024-01-20
 
 // 全局变量
@@ -536,6 +536,9 @@ function changeLanguage(lang) {
         // 更新语言切换器UI
         updateLanguageSwitcherUI();
         
+        // 强制更新注射途径按钮
+        updateRouteButtons();
+        
         console.log(`Language changed to: ${lang}`);
     }
 }
@@ -634,14 +637,20 @@ function updateRouteButtons() {
         imBtn.className = 'route-btn bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex-1';
     }
     
+    // 获取当前语言的翻译
+    const ivText = translations[currentLanguage].ivRoute || 'IV';
+    const imText = translations[currentLanguage].imRoute || 'IM';
+    const ivDesc = translations[currentLanguage].ivRouteDesc || '10 mg/ml · Slow injection over 1-2 minutes';
+    const imDesc = translations[currentLanguage].imRouteDesc || '20 mg/ml · Anterior thigh injection';
+    
     // 更新按钮文本
     ivBtn.innerHTML = `
-        <div class="font-bold">${translations[currentLanguage].ivRoute || 'IV'}</div>
-        <div class="text-xs mt-1">${translations[currentLanguage].ivRouteDesc || '10 mg/ml'}</div>
+        <div class="font-bold">${ivText}</div>
+        <div class="text-xs mt-1">${ivDesc}</div>
     `;
     imBtn.innerHTML = `
-        <div class="font-bold">${translations[currentLanguage].imRoute || 'IM'}</div>
-        <div class="text-xs mt-1">${translations[currentLanguage].imRouteDesc || '20 mg/ml'}</div>
+        <div class="font-bold">${imText}</div>
+        <div class="text-xs mt-1">${imDesc}</div>
     `;
 }
 
@@ -1460,7 +1469,6 @@ function displayArtesunResult(container) {
         `;
     }).join('');
     
-    // 核心信息卡片
     // 核心信息卡片 - 修改后去掉总剂量
     const coreInfoCards = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
