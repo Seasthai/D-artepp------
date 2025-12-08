@@ -71,11 +71,6 @@ const translations = {
         imRouteDesc: "20 mg/ml · Anterior thigh injection",
         finalInjectionVolume: "Final Injection Volume",
         reconstitutionGuide: "Reconstitution Guide",
-        stepByStep: "Step-by-step Instructions",
-        step1: "Step 1: Reconstitute",
-        step2: "Step 2: Dilute",
-        step3: "Step 3: Calculate",
-        step4: "Step 4: Administer",
         vial: "vial",
         concentration: "Concentration",
         // Argesun 特有
@@ -169,11 +164,6 @@ const translations = {
         imRouteDesc: "20 mg/ml · 大腿前部注射",
         finalInjectionVolume: "最终注射体积",
         reconstitutionGuide: "配制指南",
-        stepByStep: "分步说明",
-        step1: "步骤1：配制",
-        step2: "步骤2：稀释",
-        step3: "步骤3：计算",
-        step4: "步骤4：给药",
         vial: "瓶",
         concentration: "浓度",
         // Argesun 特有
@@ -267,11 +257,6 @@ const translations = {
         imRouteDesc: "20 mg/ml · Injection dans la cuisse antérieure",
         finalInjectionVolume: "Volume d'Injection Final",
         reconstitutionGuide: "Guide de Reconstitution",
-        stepByStep: "Instructions Étape par Étape",
-        step1: "Étape 1 : Reconstituer",
-        step2: "Étape 2 : Diluer",
-        step3: "Étape 3 : Calculer",
-        step4: "Étape 4 : Administrer",
         vial: "flacon",
         concentration: "Concentration",
         // Argesun 特有
@@ -1460,9 +1445,6 @@ function displayArtesunResult(container) {
             <div>
                 <h5 class="font-bold text-lg text-blue-800">${translations[currentLanguage].patientInjection || 'Patient Final Injection'}</h5>
                 <p class="text-sm text-blue-600">${isIV ? translations[currentLanguage].ivRouteDesc || 'Slow IV injection' : translations[currentLanguage].imRouteDesc || 'IM injection'}</p>
-                <div class="mt-1 text-xs text-gray-600 bg-yellow-50 inline-block px-2 py-1 rounded">
-                    ${result.roundingRule}
-                </div>
             </div>
             <div class="text-right">
                 <div class="text-3xl font-bold text-green-700">${result.roundedInjectionVolume} ${mlText}</div>
@@ -1470,30 +1452,7 @@ function displayArtesunResult(container) {
             </div>
         </div>
         
-        <div class="grid grid-cols-2 gap-4 mt-4">
-            <div class="bg-white p-3 rounded-lg border border-gray-200">
-                <div class="text-sm text-gray-600">${translations[currentLanguage].finalConcentration || 'Concentration'}</div>
-                <div class="text-xl font-bold text-blue-700">${result.concentration} mg/ml</div>
-            </div>
-            <div class="bg-white p-3 rounded-lg border border-gray-200">
-                <div class="text-sm text-gray-600">计算过程</div>
-                <div class="text-lg font-bold text-purple-700">
-                    ${result.totalDose.toFixed(1)}mg ÷ ${result.concentration}mg/ml = ${result.exactInjectionVolume.toFixed(2)}${mlText}
-                    <span class="block text-sm text-gray-600 mt-1">→ 应用规则 → ${result.roundedInjectionVolume}${mlText}</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 规则说明 -->
-        <div class="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-            <div class="font-medium mb-1">归类规则说明：</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
-                <div>• 儿童（<20kg）IV：≤2ml自动到2ml</div>
-                <div>• 成人（≥20kg）IV：固定7ml</div>
-                <div>• 儿童（<20kg）IM：<1ml自动到1ml</div>
-                <div>• 成人（≥20kg）IM：固定4ml</div>
-            </div>
-        </div>
+        <!-- 删除了包含最终浓度和计算过程的 grid 部分 -->
     </div>
 `;
     
@@ -1525,44 +1484,6 @@ function displayArtesunResult(container) {
                 ${strengthsHtml}
             </div>
             
-            <!-- 分步指导 -->
-            <div class="mt-6 bg-gray-50 rounded-lg p-4">
-                <h5 class="font-medium text-gray-800 mb-3">${translations[currentLanguage].stepByStep || 'Step-by-step Instructions'}</h5>
-                <div class="space-y-3">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">1</div>
-                        <div>
-                            <div class="font-medium text-gray-700">${translations[currentLanguage].step1 || 'Step 1: Reconstitute'}</div>
-                            <div class="text-sm text-gray-600">${translations[currentLanguage].useAllBicarbonate || 'Use all bicarbonate'} (${result.totalBicarbonateVolume}${mlText})</div>
-                        </div>
-                    </div>
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">2</div>
-                        <div>
-                            <div class="font-medium text-gray-700">${translations[currentLanguage].step2 || 'Step 2: Dilute'}</div>
-                            <div class="text-sm text-gray-600">${translations[currentLanguage].removeAir || 'Remove air'}, ${translations[currentLanguage].diluteNote || 'Dilute'} (${result.totalSalineVolume}${mlText})</div>
-                        </div>
-                    </div>
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">3</div>
-                        <div>
-                            <div class="font-medium text-gray-700">${translations[currentLanguage].step3 || 'Step 3: Calculate'}</div>
-                            <div class="text-sm text-gray-600">${result.totalDose.toFixed(1)}mg ÷ ${result.concentration}mg/ml = ${result.exactInjectionVolume.toFixed(2)}${mlText} → ${translations[currentLanguage].roundUp || 'Round up'} ${result.roundedInjectionVolume}${mlText}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">4</div>
-                        <div>
-                            <div class="font-medium text-gray-700">${translations[currentLanguage].step4 || 'Step 4: Administer'}</div>
-                            <div class="text-sm text-gray-600">
-                                ${isIV ? 
-                                    'IV: ' + (translations[currentLanguage].ivRouteDesc || 'Slow injection over 1-2 minutes') :
-                                    'IM: ' + (translations[currentLanguage].imRouteDesc || 'Anterior thigh injection')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
             <!-- 重要警告 -->
             <div class="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
@@ -1777,27 +1698,9 @@ function findArtesunDosage(weight) {
         roundedInjectionVolume: roundedInjectionVolume,
         concentration: concentration,
         route: injectionRoute,
-        roundingRule: getRoundingRuleDescription(weight, injectionRoute) // 添加规则描述
     };
 }
 
-function getRoundingRuleDescription(weight, route) {
-    const isChild = weight <= 20;
-    
-    if (route === 'iv') {
-        if (isChild) {
-            return "儿童IV规则：≤2ml自动到2ml，>2ml按实际计算";
-        } else {
-            return "成人IV规则：固定7ml";
-        }
-    } else {
-        if (isChild) {
-            return "儿童IM规则：<1ml自动到1ml，≥1ml按实际计算";
-        } else {
-            return "成人IM规则：固定4ml";
-        }
-    }
-}
 
 // ==================== 辅助函数 ====================
 
