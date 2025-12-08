@@ -33,6 +33,7 @@ const translations = {
         // Artesun
         artesunCalculatorTitle: "Artesun® Dosage Calculation",
         artesunCalculatorDesc: "Select patient weight and injection route, system will calculate recommended Artesun® injection dosage",
+        routeSelectionInstruction: "Select IV for slow intravenous injection or IM for intramuscular injection",
         // 通用
         weightSelector: "Weight Selector",
         manualInput: "Or enter weight manually",
@@ -129,6 +130,7 @@ const translations = {
         // Artesun
         artesunCalculatorTitle: "Artesun® 剂量计算",
         artesunCalculatorDesc: "选择患者体重和注射途径，系统将计算推荐的Artesun®注射剂量",
+        routeSelectionInstruction: "选择IV进行缓慢静脉注射或选择IM进行肌肉注射",
         // 通用
         weightSelector: "体重选择器",
         manualInput: "或直接输入体重",
@@ -225,6 +227,7 @@ const translations = {
         // Artesun
         artesunCalculatorTitle: "Calcul de Dosage Artesun®",
         artesunCalculatorDesc: "Sélectionnez le poids du patient et la voie d'injection, le système calculera le dosage recommandé d'Artesun® par injection",
+        routeSelectionInstruction: "Sélectionnez IV pour injection intraveineuse lente ou IM pour injection intramusculaire",
         // 通用
         weightSelector: "Sélecteur de Poids",
         manualInput: "Ou saisir manuellement le poids",
