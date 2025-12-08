@@ -1,5 +1,5 @@
 // Medical Dosage Calculator - 主要JavaScript逻辑
-// 版本：v8.0 - 支持D-Arteapp、Argesun、Artesun三产品计算器
+// 版本：v8.1 - 支持D-Arteapp、Argesun、Artesun三产品计算器，Artesun支持IV/IM选择
 
 // 全局变量
 let currentWeight = 35.0;
@@ -8,6 +8,7 @@ let isDragging = false;
 let startAngle = 0;
 let currentRotation = 0;
 let currentLanguage = 'en'; // 默认语言为英语
+let injectionRoute = 'iv'; // 新增：默认静脉注射（'iv'或'im'）
 
 // 多语言翻译数据
 const translations = {
@@ -30,7 +31,7 @@ const translations = {
         argesunCalculatorDesc: "Select patient weight, system will calculate recommended Argesun® injection dosage",
         // Artesun
         artesunCalculatorTitle: "Artesun® Dosage Calculation",
-        artesunCalculatorDesc: "Select patient weight, system will calculate recommended Artesun® injection dosage",
+        artesunCalculatorDesc: "Select patient weight and injection route, system will calculate recommended Artesun® injection dosage",
         // 通用
         weightSelector: "Weight Selector",
         manualInput: "Or enter weight manually",
@@ -48,7 +49,7 @@ const translations = {
         argesunDosageResultTitle: "Argesun® dosage based on weight",
         argesunDosageResultSubtitle: "Argesun® - Injectable Artesunate (Single Solvent)",
         // Artesun 结果
-        artesunDosageResultTitle: "Artesun® dosage based on weight",
+        artesunDosageResultTitle: "Artesun® dosage based on weight {weight}kg",
         artesunDosageResultSubtitle: "Artesun® - Injectable Artesunate (Dual Solvent)",
         // 通用结果
         patientWeight: "Patient Weight",
@@ -61,6 +62,22 @@ const translations = {
         weightOutOfRange: "Weight out of range",
         checkWeight: "Please check if weight input is correct (5-100kg)",
         selectProductAlert: "Please select a product first",
+        // 注射途径选择
+        injectionRoute: "Injection Route",
+        selectRoute: "Select Injection Route",
+        ivRoute: "Intravenous (IV)",
+        imRoute: "Intramuscular (IM)",
+        ivRouteDesc: "10 mg/ml · Slow injection over 1-2 minutes",
+        imRouteDesc: "20 mg/ml · Anterior thigh injection",
+        finalInjectionVolume: "Final Injection Volume",
+        reconstitutionGuide: "Reconstitution Guide",
+        stepByStep: "Step-by-step Instructions",
+        step1: "Step 1: Reconstitute",
+        step2: "Step 2: Dilute",
+        step3: "Step 3: Calculate",
+        step4: "Step 4: Administer",
+        vial: "vial",
+        concentration: "Concentration",
         // Argesun 特有
         dosageFormula: "Dosage formula:",
         dosagePerKg: "Dosage per kg:",
@@ -74,7 +91,6 @@ const translations = {
         availableStrengths: "Available Strengths:",
         reconstitutionVolume: "Reconstitution Volume:",
         injectionVolume: "Injection Volume:",
-        injectionRoute: "Injection Route:",
         selectStrength: "Select Strength Combination",
         ivImNote: "Note: Same volume for IV and IM injection (20mg/ml)",
         totalDose: "Total dose:",
@@ -111,7 +127,7 @@ const translations = {
         argesunCalculatorDesc: "选择患者体重，系统将计算推荐的Argesun®注射剂量",
         // Artesun
         artesunCalculatorTitle: "Artesun® 剂量计算",
-        artesunCalculatorDesc: "选择患者体重，系统将计算推荐的Artesun®注射剂量",
+        artesunCalculatorDesc: "选择患者体重和注射途径，系统将计算推荐的Artesun®注射剂量",
         // 通用
         weightSelector: "体重选择器",
         manualInput: "或直接输入体重",
@@ -142,6 +158,22 @@ const translations = {
         weightOutOfRange: "体重超出范围",
         checkWeight: "请检查体重输入是否正确 (5-100kg)",
         selectProductAlert: "请先选择产品",
+        // 注射途径选择
+        injectionRoute: "注射途径",
+        selectRoute: "选择注射途径",
+        ivRoute: "静脉注射 (IV)",
+        imRoute: "肌肉注射 (IM)",
+        ivRouteDesc: "10 mg/ml · 缓慢注射1-2分钟",
+        imRouteDesc: "20 mg/ml · 大腿前部注射",
+        finalInjectionVolume: "最终注射体积",
+        reconstitutionGuide: "配制指南",
+        stepByStep: "分步说明",
+        step1: "步骤1：配制",
+        step2: "步骤2：稀释",
+        step3: "步骤3：计算",
+        step4: "步骤4：给药",
+        vial: "瓶",
+        concentration: "浓度",
         // Argesun 特有
         dosageFormula: "剂量公式：",
         dosagePerKg: "每公斤剂量：",
@@ -155,7 +187,6 @@ const translations = {
         availableStrengths: "可用规格：",
         reconstitutionVolume: "配制体积：",
         injectionVolume: "注射体积：",
-        injectionRoute: "注射途径：",
         selectStrength: "选择规格组合",
         ivImNote: "注意：静脉和肌肉注射使用相同体积（20mg/ml）",
         totalDose: "总剂量：",
@@ -192,7 +223,7 @@ const translations = {
         argesunCalculatorDesc: "Sélectionnez le poids du patient, le système calculera le dosage recommandé d'Argesun® par injection",
         // Artesun
         artesunCalculatorTitle: "Calcul de Dosage Artesun®",
-        artesunCalculatorDesc: "Sélectionnez le poids du patient, le système calculera le dosage recommandé d'Artesun® par injection",
+        artesunCalculatorDesc: "Sélectionnez le poids du patient et la voie d'injection, le système calculera le dosage recommandé d'Artesun® par injection",
         // 通用
         weightSelector: "Sélecteur de Poids",
         manualInput: "Ou saisir manuellement le poids",
@@ -210,7 +241,7 @@ const translations = {
         argesunDosageResultTitle: "Dosage Argesun® basé sur le poids",
         argesunDosageResultSubtitle: "Argesun® - Artesunate Injectible (Solvant Unique)",
         // Artesun 结果
-        artesunDosageResultTitle: "Dosage Artesun® basé sur le poids",
+        artesunDosageResultTitle: "Dosage Artesun® basé sur le poids {weight}kg",
         artesunDosageResultSubtitle: "Artesun® - Artesunate Injectible (Double Solvant)",
         // 通用结果
         patientWeight: "Poids du Patient",
@@ -223,6 +254,22 @@ const translations = {
         weightOutOfRange: "Poids hors limites",
         checkWeight: "Veuillez vérifier si la saisie du poids est correcte (5-100kg)",
         selectProductAlert: "Veuillez d'abord sélectionner un produit",
+        // 注射途径选择
+        injectionRoute: "Voie d'Injection",
+        selectRoute: "Sélectionner la Voie d'Injection",
+        ivRoute: "Intraveineuse (IV)",
+        imRoute: "Intramusculaire (IM)",
+        ivRouteDesc: "10 mg/ml · Injection lente sur 1-2 minutes",
+        imRouteDesc: "20 mg/ml · Injection dans la cuisse antérieure",
+        finalInjectionVolume: "Volume d'Injection Final",
+        reconstitutionGuide: "Guide de Reconstitution",
+        stepByStep: "Instructions Étape par Étape",
+        step1: "Étape 1 : Reconstituer",
+        step2: "Étape 2 : Diluer",
+        step3: "Étape 3 : Calculer",
+        step4: "Étape 4 : Administrer",
+        vial: "flacon",
+        concentration: "Concentration",
         // Argesun 特有
         dosageFormula: "Formule de dosage:",
         dosagePerKg: "Dosage par kg:",
@@ -236,7 +283,6 @@ const translations = {
         availableStrengths: "Forces disponibles:",
         reconstitutionVolume: "Volume de reconstitution:",
         injectionVolume: "Volume d'injection:",
-        injectionRoute: "Voie d'injection:",
         selectStrength: "Sélectionner la combinaison de forces",
         ivImNote: "Note: Même volume pour injection IV et IM (20mg/ml)",
         totalDose: "Dose totale:",
@@ -397,7 +443,8 @@ const artesunData = {
         { 
             mg: 30, 
             bicarbonateVolume: 0.5, // ml (碳酸氢钠)
-            salineVolume: 2.5,       // ml (氯化钠)
+            salineVolume: 2.5,       // ml (氯化钠) - IV用量
+            imSalineVolume: 1.0,     // ml (氯化钠) - IM估算用量
             afterReconstitution: 0.5, // 配制后体积
             afterDilutionIV: 6.0,     // 静脉稀释后总体积
             afterDilutionIM: 3.0      // 肌肉稀释后总体积
@@ -406,6 +453,7 @@ const artesunData = {
             mg: 60, 
             bicarbonateVolume: 1.0,
             salineVolume: 5.0,
+            imSalineVolume: 2.0,
             afterReconstitution: 1.0,
             afterDilutionIV: 6.0,
             afterDilutionIM: 3.0
@@ -414,6 +462,7 @@ const artesunData = {
             mg: 120, 
             bicarbonateVolume: 2.0,
             salineVolume: 10.0,
+            imSalineVolume: 4.0,
             afterReconstitution: 2.0,
             afterDilutionIV: 6.0,
             afterDilutionIM: 3.0
@@ -475,7 +524,7 @@ function updateCalculatorTitleAndDesc() {
         calculatorDesc.textContent = translations[currentLanguage].argesunCalculatorDesc || 'Select patient weight, system will calculate recommended Argesun® dosage';
     } else if (selectedProduct.id === 'artesun') {
         calculatorTitle.textContent = translations[currentLanguage].artesunCalculatorTitle || 'Artesun® Dosage Calculation';
-        calculatorDesc.textContent = translations[currentLanguage].artesunCalculatorDesc || 'Select patient weight, system will calculate recommended Artesun® dosage';
+        calculatorDesc.textContent = translations[currentLanguage].artesunCalculatorDesc || 'Select patient weight and injection route, system will calculate recommended Artesun® dosage';
     }
 }
 
@@ -579,6 +628,42 @@ function initializeLanguage() {
     console.log('Language initialized to:', currentLanguage);
 }
 
+// ==================== 注射途径选择功能 ====================
+
+// 设置注射途径
+function setInjectionRoute(route) {
+    injectionRoute = route;
+    updateRouteButtons();
+    updateDosageDisplay();
+}
+
+// 更新注射途径按钮状态
+function updateRouteButtons() {
+    const ivBtn = document.getElementById('ivRouteBtn');
+    const imBtn = document.getElementById('imRouteBtn');
+    
+    if (!ivBtn || !imBtn) return;
+    
+    // 更新按钮样式
+    if (injectionRoute === 'iv') {
+        ivBtn.className = 'route-btn bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex-1';
+        imBtn.className = 'route-btn bg-white border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors flex-1';
+    } else {
+        ivBtn.className = 'route-btn bg-white border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors flex-1';
+        imBtn.className = 'route-btn bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex-1';
+    }
+    
+    // 更新按钮文本
+    ivBtn.innerHTML = `
+        <div class="font-bold">${translations[currentLanguage].ivRoute || 'IV'}</div>
+        <div class="text-xs mt-1">${translations[currentLanguage].ivRouteDesc || '10 mg/ml'}</div>
+    `;
+    imBtn.innerHTML = `
+        <div class="font-bold">${translations[currentLanguage].imRoute || 'IM'}</div>
+        <div class="text-xs mt-1">${translations[currentLanguage].imRouteDesc || '20 mg/ml'}</div>
+    `;
+}
+
 // ==================== 核心初始化 ====================
 
 // 页面加载完成后初始化
@@ -590,7 +675,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化刻度盘（只在计算器界面显示时）
     const calculatorInterface = document.getElementById('calculatorInterface');
-    if (!calculatorInterface.classList.contains('hidden')) {
+    if (calculatorInterface && !calculatorInterface.classList.contains('hidden')) {
         initializeScale();
         updateWeightDisplay();
     }
@@ -959,6 +1044,15 @@ function showCalculatorInterface() {
         // 更新计算器标题和描述
         updateCalculatorTitleAndDesc();
         
+        // 如果是Artesun，显示注射途径选择
+        const routeSelector = document.getElementById('injectionRouteSelector');
+        if (selectedProduct.id === 'artesun' && routeSelector) {
+            routeSelector.classList.remove('hidden');
+            updateRouteButtons();
+        } else if (routeSelector) {
+            routeSelector.classList.add('hidden');
+        }
+        
         // 添加选中效果
         document.querySelectorAll('.product-card').forEach(card => {
             card.classList.remove('selected');
@@ -998,7 +1092,7 @@ function getDosageResultTitle(weight) {
     } else if (selectedProduct.id === 'argesun') {
         titleTemplate = translations[currentLanguage].argesunDosageResultTitle || 'Argesun® dosage based on weight';
     } else if (selectedProduct.id === 'artesun') {
-        titleTemplate = translations[currentLanguage].artesunDosageResultTitle || 'Artesun® dosage based on weight';
+        titleTemplate = translations[currentLanguage].artesunDosageResultTitle || 'Artesun® dosage based on weight {weight}kg';
     } else {
         titleTemplate = 'Recommended dosage based on weight';
     }
@@ -1025,6 +1119,32 @@ function getProductSubtitle() {
     return '';
 }
 
+// 显示选择体重提示
+function showSelectWeightPrompt(container) {
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            <p class="text-lg font-medium mb-2">${translations[currentLanguage].selectWeight || 'Please select weight'}</p>
+            <p class="text-sm">${translations[currentLanguage].selectWeightDesc || 'Slide the dial on the left to set patient weight'}</p>
+        </div>
+    `;
+}
+
+// 显示体重超出范围错误
+function showWeightOutOfRangeError(container) {
+    container.innerHTML = `
+        <div class="text-center text-red-500 py-8">
+            <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <p class="font-medium">${translations[currentLanguage].weightOutOfRange || 'Weight out of range'}</p>
+            <p class="text-sm">${translations[currentLanguage].checkWeight || 'Please check if weight input is correct (5-100kg)'}</p>
+        </div>
+    `;
+}
+
 // 更新剂量显示
 function updateDosageDisplay() {
     const dosageResult = document.getElementById('dosageResult');
@@ -1032,15 +1152,7 @@ function updateDosageDisplay() {
     
     // 如果没有选择产品，显示默认提示
     if (!selectedProduct) {
-        dosageResult.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                </svg>
-                <p class="text-lg font-medium mb-2">${translations[currentLanguage].selectWeight || 'Please select weight'}</p>
-                <p class="text-sm">${translations[currentLanguage].selectWeightDesc || 'Slide the dial on the left to set patient weight'}</p>
-            </div>
-        `;
+        showSelectWeightPrompt(dosageResult);
         return;
     }
     
@@ -1055,19 +1167,11 @@ function updateDosageDisplay() {
 }
 
 // 显示D-Arteapp结果
-function displayDarteappResult(dosageResult) {
+function displayDarteappResult(container) {
     const result = findDosageRecommendation(currentWeight);
     
     if (!result) {
-        dosageResult.innerHTML = `
-            <div class="text-center text-red-500 py-8">
-                <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <p class="font-medium">${translations[currentLanguage].weightOutOfRange || 'Weight out of range'}</p>
-                <p class="text-sm">${translations[currentLanguage].checkWeight || 'Please check if weight input is correct (5-100kg)'}</p>
-            </div>
-        `;
+        showWeightOutOfRangeError(container);
         return;
     }
     
@@ -1109,7 +1213,7 @@ function displayDarteappResult(dosageResult) {
     const dosageTitle = getDosageResultTitle(currentWeight);
     const productSubtitle = getProductSubtitle();
     
-    dosageResult.innerHTML = `
+    container.innerHTML = `
         <div class="dosage-result p-6 rounded-lg">
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div class="mb-4 md:mb-0">
@@ -1145,19 +1249,11 @@ function displayDarteappResult(dosageResult) {
 }
 
 // 显示Argesun结果
-function displayArgesunResult(dosageResult) {
+function displayArgesunResult(container) {
     const result = findArgesunDosage(currentWeight);
     
     if (!result) {
-        dosageResult.innerHTML = `
-            <div class="text-center text-red-500 py-8">
-                <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <p class="font-medium">${translations[currentLanguage].weightOutOfRange || 'Weight out of range'}</p>
-                <p class="text-sm">${translations[currentLanguage].checkWeight || 'Please check if weight input is correct (5-100kg)'}</p>
-            </div>
-        `;
+        showWeightOutOfRangeError(container);
         return;
     }
     
@@ -1202,7 +1298,7 @@ function displayArgesunResult(dosageResult) {
     const dosageTitle = getDosageResultTitle(currentWeight);
     const productSubtitle = getProductSubtitle();
     
-    dosageResult.innerHTML = `
+    container.innerHTML = `
         <div class="dosage-result p-6 rounded-lg">
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div class="mb-4 md:mb-0">
@@ -1286,166 +1382,173 @@ function displayArgesunResult(dosageResult) {
 }
 
 // 显示Artesun结果
-function displayArtesunResult(dosageResult) {
+function displayArtesunResult(container) {
     const result = findArtesunDosage(currentWeight);
     
     if (!result) {
-        dosageResult.innerHTML = `
-            <div class="text-center text-red-500 py-8">
-                <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <p class="font-medium">${translations[currentLanguage].weightOutOfRange || 'Weight out of range'}</p>
-                <p class="text-sm">${translations[currentLanguage].checkWeight || 'Please check if weight input is correct (5-100kg)'}</p>
-            </div>
-        `;
+        showWeightOutOfRangeError(container);
         return;
     }
     
-    // 根据当前语言获取药品单位的翻译
-    const getVialText = () => {
-        switch(currentLanguage) {
-            case 'zh': return '瓶';
-            case 'fr': return 'flacon';
-            default: return 'vial';
-        }
-    };
-    
-    const vialText = getVialText();
+    const isIV = result.route === 'iv';
     const mlText = currentLanguage === 'zh' ? '毫升' : 'ml';
     
     // 构建规格显示HTML
     const strengthsHtml = Object.entries(result.recommendedStrengths).map(([strength, count]) => {
         const strengthInfo = artesunData.strengths.find(s => s.mg === parseInt(strength));
+        const salineVolume = isIV ? strengthInfo.salineVolume : strengthInfo.imSalineVolume;
+        
         return `
-            <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200">
+            <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:shadow transition-shadow">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                            <span class="font-bold text-blue-700">${strength}</span>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="font-bold text-blue-700 text-lg">${strength}</span>
                         </div>
                         <div>
                             <div class="font-semibold text-gray-800">Artesun® ${strength}mg</div>
-                            <div class="text-sm text-gray-600">
-                                ${translations[currentLanguage].bicarbonateVolume || 'Bicarbonate volume'}: ${strengthInfo.bicarbonateVolume}${mlText}
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <div>${translations[currentLanguage].bicarbonateVolume || 'Bicarbonate'}: ${strengthInfo.bicarbonateVolume}${mlText}</div>
+                                <div>${translations[currentLanguage].salineVolume || 'Saline'}: ${salineVolume}${mlText}</div>
                             </div>
                         </div>
                     </div>
-                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-bold">
-                        ${count} ${vialText}${count > 1 ? 's' : ''}
+                    <span class="px-3 py-2 bg-green-100 text-green-800 rounded-full font-bold">
+                        ${count} ${translations[currentLanguage].vial || 'vial'}${count > 1 ? 's' : ''}
                     </span>
                 </div>
             </div>
         `;
     }).join('');
     
-    // 使用辅助函数获取处理后的标题
-    const dosageTitle = getDosageResultTitle(currentWeight);
-    const productSubtitle = getProductSubtitle();
+    // 分步指导
+    const stepByStepGuide = `
+        <div class="mt-6 bg-gray-50 rounded-lg p-4">
+            <h5 class="font-medium text-gray-800 mb-3">${translations[currentLanguage].stepByStep || 'Step-by-step Instructions'}</h5>
+            <div class="space-y-3">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">1</div>
+                    <div>
+                        <div class="font-medium text-gray-700">${translations[currentLanguage].step1 || 'Step 1: Reconstitute'}</div>
+                        <div class="text-sm text-gray-600">${translations[currentLanguage].useAllBicarbonate || 'Use all bicarbonate'} (${result.totalBicarbonateVolume}${mlText})</div>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">2</div>
+                    <div>
+                        <div class="font-medium text-gray-700">${translations[currentLanguage].step2 || 'Step 2: Dilute'}</div>
+                        <div class="text-sm text-gray-600">${translations[currentLanguage].removeAir || 'Remove air'}, ${translations[currentLanguage].diluteNote || 'Dilute'} (${result.totalSalineVolume}${mlText})</div>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">3</div>
+                    <div>
+                        <div class="font-medium text-gray-700">${translations[currentLanguage].step3 || 'Step 3: Calculate'}</div>
+                        <div class="text-sm text-gray-600">${result.totalDose.toFixed(1)}mg ÷ ${result.concentration}mg/ml = ${result.exactInjectionVolume}${mlText} → ${translations[currentLanguage].roundUp || 'Round up'} ${result.roundedInjectionVolume}${mlText}</div>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 mt-0.5">4</div>
+                    <div>
+                        <div class="font-medium text-gray-700">${translations[currentLanguage].step4 || 'Step 4: Administer'}</div>
+                        <div class="text-sm text-gray-600">
+                            ${isIV ? 
+                                'IV: ' + (translations[currentLanguage].ivRouteDesc || 'Slow injection over 1-2 minutes') :
+                                'IM: ' + (translations[currentLanguage].imRouteDesc || 'Anterior thigh injection')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
-    dosageResult.innerHTML = `
-        <div class="dosage-result p-6 rounded-lg">
+    container.innerHTML = `
+        <div class="dosage-result p-6 rounded-lg bg-white">
+            <!-- 顶部信息栏 -->
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div class="mb-4 md:mb-0">
-                    <h4 class="text-lg font-semibold text-gray-800">${dosageTitle}</h4>
-                    <p class="text-sm text-gray-600 mt-1">${productSubtitle}</p>
+                    <h4 class="text-lg font-semibold text-gray-800">${getDosageResultTitle(currentWeight)}</h4>
+                    <p class="text-sm text-gray-600 mt-1">${getProductSubtitle()}</p>
                 </div>
                 <div class="text-center md:text-right">
-                    <div class="text-2xl font-bold number-display text-blue-600">${currentWeight.toFixed(1)} kg</div>
+                    <div class="inline-flex items-center px-3 py-1 rounded-full ${isIV ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'} mb-2">
+                        <span class="font-bold">${isIV ? translations[currentLanguage].ivRoute || 'IV' : translations[currentLanguage].imRoute || 'IM'}</span>
+                    </div>
+                    <div class="text-2xl font-bold text-blue-600">${result.weight.toFixed(1)} kg</div>
                     <div class="text-sm text-gray-500">${translations[currentLanguage].patientWeight || 'Patient Weight'}</div>
                 </div>
             </div>
             
-            <!-- 剂量公式 -->
-            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div class="font-medium text-blue-800 mb-2">${translations[currentLanguage].dosageFormula || 'Dosage formula:'}</div>
-                <div class="text-sm text-blue-700">
-                    ${result.isChild ? 
-                        `• ${translations[currentLanguage].forChildren || 'for children <20kg'}: ${artesunData.dosageFormula.child} mg/kg` :
-                        `• ${translations[currentLanguage].forAdults || 'for patients ≥20kg'}: ${artesunData.dosageFormula.adult} mg/kg`
-                    }
+            <!-- 剂量总结 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="text-sm text-blue-600 mb-1">${translations[currentLanguage].totalDose || 'Total Dose'}</div>
+                    <div class="text-2xl font-bold text-blue-700">${result.totalDose.toFixed(1)} mg</div>
+                    <div class="text-xs text-blue-600 mt-1">${result.dosagePerKg} mg/kg × ${result.weight.toFixed(1)} kg</div>
                 </div>
-                <div class="mt-2 text-lg font-bold text-blue-800">
-                    ${translations[currentLanguage].totalDose || 'Total dose'}: <span class="number-display">${result.totalDose.toFixed(1)} mg</span>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="text-sm text-green-600 mb-1">${translations[currentLanguage].finalInjectionVolume || 'Injection Volume'}</div>
+                    <div class="text-2xl font-bold text-green-700">${result.roundedInjectionVolume} ${mlText}</div>
+                    <div class="text-xs text-green-600 mt-1">${translations[currentLanguage].roundUp || 'Rounded up'}</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <div class="text-sm text-purple-600 mb-1">${translations[currentLanguage].concentration || 'Concentration'}</div>
+                    <div class="text-2xl font-bold text-purple-700">${result.concentration} mg/ml</div>
+                    <div class="text-xs text-purple-600 mt-1">${isIV ? translations[currentLanguage].ivConcentration || 'IV' : translations[currentLanguage].imConcentration || 'IM'}</div>
                 </div>
             </div>
             
-            <!-- 推荐规格 -->
-            <div class="space-y-3 mb-6">
-                <h5 class="font-medium text-gray-700">${translations[currentLanguage].selectStrength || 'Select Strength Combination'}:</h5>
+            <!-- 规格选择 -->
+            <div class="mb-6">
+                <h5 class="font-medium text-gray-700 mb-3">${translations[currentLanguage].selectStrength || 'Select Strength'}:</h5>
                 ${strengthsHtml}
             </div>
             
-            <!-- 配制和注射信息 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="font-medium text-gray-700 mb-2">${translations[currentLanguage].bicarbonateVolume || 'Bicarbonate Volume'}</div>
-                    <div class="text-2xl font-bold text-green-600 number-display">${result.totalBicarbonateVolume} ${mlText}</div>
-                    <div class="text-sm text-gray-500 mt-1">${translations[currentLanguage].dualSolvent || 'Dual-solvent system'}</div>
+            <!-- 溶剂体积 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <span class="font-bold text-green-700">NaHCO₃</span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-700">${translations[currentLanguage].bicarbonateVolume || 'Bicarbonate'}</div>
+                            <div class="text-2xl font-bold text-green-600">${result.totalBicarbonateVolume} ${mlText}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-2">${translations[currentLanguage].useAllBicarbonate || 'Use all bicarbonate'}</div>
                 </div>
-                <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="font-medium text-gray-700 mb-2">${translations[currentLanguage].salineVolume || 'Saline Volume'}</div>
-                    <div class="text-2xl font-bold text-purple-600 number-display">${result.totalSalineVolume} ${mlText}</div>
-                    <div class="text-sm text-gray-500 mt-1">${translations[currentLanguage].diluteNote || 'For dilution after reconstitution'}</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="font-medium text-gray-700 mb-2">${translations[currentLanguage].injectionVolume || 'Injection Volume'}</div>
-                    <div class="text-2xl font-bold text-indigo-600 number-display">${result.injectionVolume.toFixed(1)} ${mlText}</div>
-                    <div class="text-sm text-gray-500 mt-1">${result.route === 'iv' ? translations[currentLanguage].ivConcentration || 'IV: 10 mg/ml' : translations[currentLanguage].imConcentration || 'IM: 20 mg/ml'}</div>
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <span class="font-bold text-blue-700">NaCl</span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-700">${translations[currentLanguage].salineVolume || 'Saline'}</div>
+                            <div class="text-2xl font-bold text-blue-600">${result.totalSalineVolume} ${mlText}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-2">${translations[currentLanguage].removeAir || 'Remove air before injection'}</div>
                 </div>
             </div>
             
-            <!-- 计算示例 -->
-            <div class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <div class="font-medium text-amber-800 mb-2">${translations[currentLanguage].example || 'Example'} (${currentWeight.toFixed(1)}kg ${result.isChild ? translations[currentLanguage].forChildren || 'child' : translations[currentLanguage].forAdults || 'adult'}):</div>
-                <div class="text-sm text-amber-700">
-                    <div class="mb-2">
-                        <strong>${translations[currentLanguage].ivCalculation || 'IV Calculation:'}</strong><br>
-                        (${result.dosagePerKg} mg/kg × ${currentWeight.toFixed(1)} kg) ÷ 10 mg/ml = ${result.injectionVolume.toFixed(1)} ml
-                    </div>
-                    <div>
-                        <strong>${translations[currentLanguage].imCalculation || 'IM Calculation:'}</strong><br>
-                        (${result.dosagePerKg} mg/kg × ${currentWeight.toFixed(1)} kg) ÷ 20 mg/ml = ${(result.totalDose / 20).toFixed(1)} ml
-                    </div>
-                    <div class="mt-2 text-amber-900 font-medium">
-                        ${translations[currentLanguage].roundUp || 'Round up to nearest ml'}
-                    </div>
-                </div>
-            </div>
+            ${stepByStepGuide}
             
-            <!-- 重要提示 -->
+            <!-- 重要警告 -->
             <div class="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
                 <div class="flex items-start">
                     <svg class="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                     <div>
-                        <p class="text-sm text-red-800 font-medium mb-1">
-                            ${translations[currentLanguage].reconstitutionNote || 'Reconstitution Note:'}
+                        <p class="text-sm text-red-800 font-medium mb-2">
+                            ${translations[currentLanguage].reconstitutionNote || 'Important Notes'}
                         </p>
-                        <p class="text-sm text-red-700 mb-2">
-                            • ${translations[currentLanguage].useAllBicarbonate || 'Use all content of bicarbonate ampoule'}<br>
-                            • ${translations[currentLanguage].removeAir || 'Remove air from ampoule before saline injection'}
-                        </p>
-                        <p class="text-sm text-red-700">
-                            <strong>${translations[currentLanguage].administrationMethod || 'Administration Method:'}</strong> 
-                            ${translations[currentLanguage].immediateUse || 'Must be used within 1 hour after reconstitution'}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 用药说明 -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div>
-                        <p class="text-sm text-blue-800">
-                            <strong>${translations[currentLanguage].medicationInstructions || 'Medication Instructions:'}</strong> 
-                            ${translations[currentLanguage].pleaseFollow || 'Please strictly follow medical advice. Seek medical attention immediately if adverse reactions occur.'}
-                        </p>
+                        <ul class="text-sm text-red-700 space-y-1">
+                            <li>• ${translations[currentLanguage].useAllBicarbonate || 'Use all bicarbonate'}</li>
+                            <li>• ${translations[currentLanguage].removeAir || 'Remove air before injection'}</li>
+                            <li>• ${translations[currentLanguage].immediateUse || 'Use within 1 hour'}</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1569,7 +1672,7 @@ function findArtesunDosage(weight) {
         strengthCounts[strength] = (strengthCounts[strength] || 0) + 1;
     });
     
-    // 计算配制后的总体积
+    // 计算碳酸氢钠和氯化钠总体积
     let totalBicarbonateVolume = 0;
     let totalSalineVolume = 0;
     
@@ -1577,12 +1680,19 @@ function findArtesunDosage(weight) {
         const strengthInfo = artesunData.strengths.find(s => s.mg === strength);
         if (strengthInfo) {
             totalBicarbonateVolume += strengthInfo.bicarbonateVolume;
-            totalSalineVolume += strengthInfo.salineVolume;
+            // 根据注射途径决定氯化钠用量
+            if (injectionRoute === 'iv') {
+                totalSalineVolume += strengthInfo.salineVolume; // IV用量
+            } else {
+                totalSalineVolume += strengthInfo.imSalineVolume; // IM用量
+            }
         }
     });
     
-    // 计算注射体积（默认为静脉注射）
-    const injectionVolume = totalDose / artesunData.concentrations.iv; // 10 mg/ml
+    // 计算最终注射体积
+    const concentration = injectionRoute === 'iv' ? artesunData.concentrations.iv : artesunData.concentrations.im;
+    const exactInjectionVolume = totalDose / concentration;
+    const roundedInjectionVolume = Math.ceil(exactInjectionVolume); // 向上取整
     
     return {
         weight: weight,
@@ -1590,10 +1700,12 @@ function findArtesunDosage(weight) {
         dosagePerKg: dosagePerKg,
         isChild: weight < 20,
         recommendedStrengths: strengthCounts,
-        totalBicarbonateVolume: totalBicarbonateVolume,
-        totalSalineVolume: totalSalineVolume,
-        injectionVolume: injectionVolume,
-        route: "iv" // 默认为静脉注射
+        totalBicarbonateVolume: parseFloat(totalBicarbonateVolume.toFixed(1)),
+        totalSalineVolume: parseFloat(totalSalineVolume.toFixed(1)),
+        exactInjectionVolume: parseFloat(exactInjectionVolume.toFixed(2)),
+        roundedInjectionVolume: roundedInjectionVolume,
+        concentration: concentration,
+        route: injectionRoute
     };
 }
 
@@ -1613,5 +1725,6 @@ function roundToDecimal(num, decimals) {
 window.selectProduct = selectProduct;
 window.setWeight = setWeight;
 window.changeLanguage = changeLanguage;
+window.setInjectionRoute = setInjectionRoute; // 新增：导出注射途径设置函数
 
 console.log('Medical Dosage Calculator脚本已加载');

@@ -434,7 +434,7 @@
                             </svg>
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">Argesun</h3>
-                        <p class="text-gray-600 mb-4" data-i18n="argesunDesc">Compound Artemisinin Preparation</p>
+                        <p class="text-gray-600 mb-4" data-i18n="argesunDesc">Artesunate Injection Dosage Calculator</p>
                         <!-- 移除"Coming Soon"标签 -->
                     </div>
                 </div>
@@ -444,8 +444,26 @@
         <!-- 剂量计算界面 -->
         <div id="calculatorInterface" class="hidden">
             <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold title-font text-gray-800 mb-4" data-i18n="calculatorTitle">D-Arteapp Dosage Calculation</h2>
-                <p class="text-gray-600" data-i18n="calculatorDesc">Select patient weight by sliding the dial, system will automatically calculate recommended dosage</p>
+                <h2 class="text-3xl font-bold title-font text-gray-800 mb-4" id="calculatorTitle">D-Arteapp Dosage Calculation</h2>
+                <p class="text-gray-600" id="calculatorDesc">Select patient weight by sliding the dial, system will automatically calculate recommended dosage</p>
+            </div>
+            
+            <!-- 注射途径选择（只对Artesun显示） -->
+            <div id="injectionRouteSelector" class="hidden mb-8 max-w-lg mx-auto">
+                <h3 class="text-xl font-semibold title-font text-gray-800 mb-4 text-center" data-i18n="injectionRoute">注射途径</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="setInjectionRoute('iv')" id="ivRouteBtn" 
+                            class="route-btn bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center">
+                        <div class="font-bold text-lg mb-2" data-i18n="ivRoute">Intravenous (IV)</div>
+                        <div class="text-sm opacity-90" data-i18n="ivRouteDesc">10 mg/ml · Slow injection 1-2 min</div>
+                    </button>
+                    <button onclick="setInjectionRoute('im')" id="imRouteBtn"
+                            class="route-btn bg-white border-2 border-gray-300 text-gray-700 px-6 py-4 rounded-xl hover:bg-gray-50 hover:border-green-500 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center">
+                        <div class="font-bold text-lg mb-2" data-i18n="imRoute">Intramuscular (IM)</div>
+                        <div class="text-sm opacity-90" data-i18n="imRouteDesc">20 mg/ml · Anterior thigh injection</div>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 text-center mt-3">Select IV for slow intravenous injection or IM for intramuscular injection</p>
             </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
