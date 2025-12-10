@@ -1,5 +1,5 @@
 // Medical Dosage Calculator - 主要JavaScript逻辑
-// 版本：v8.5 - 增加D-Artepp专用刻度盘
+// 版本：v8.6 - 添加动态体重范围提示
 // 日期：2024-01-20
 
 // 全局变量
@@ -11,7 +11,7 @@ let currentRotation = 0;
 let currentLanguage = 'en'; // 默认语言为英语
 let injectionRoute = 'iv'; // 新增：默认静脉注射（'iv'或'im'）
 
-// 多语言翻译数据
+// 多语言翻译数据 - 添加D-Artepp专用范围提示
 const translations = {
     en: {
         appTitle: "Medical Dosage Calculator",
@@ -38,6 +38,7 @@ const translations = {
         weightSelector: "Weight Selector",
         manualInput: "Or enter weight manually",
         weightRange: "Range: 0-100kg",
+        weightRangeDartepp: "Range: 5-100kg", // D-Artepp专用
         dosagePlan: "Recommended Dosage Plan",
         selectWeight: "Please select weight",
         selectWeightDesc: "Slide the dial on the left to set patient weight",
@@ -63,6 +64,7 @@ const translations = {
         pleaseFollow: "Please strictly follow medical advice. Seek medical attention immediately if adverse reactions occur.",
         weightOutOfRange: "Weight out of range",
         checkWeight: "Please check if weight input is correct (0-100kg)",
+        checkWeightDartepp: "Please check if weight input is correct (5-100kg)", // D-Artepp专用
         selectProductAlert: "Please select a product first",
         // 注射途径选择
         injectionRoute: "Injection Route",
@@ -135,6 +137,7 @@ const translations = {
         weightSelector: "体重选择器",
         manualInput: "或直接输入体重",
         weightRange: "范围: 0-100kg",
+        weightRangeDartepp: "范围: 5-100kg", // D-Artepp专用
         dosagePlan: "推荐剂量方案",
         selectWeight: "请选择体重",
         selectWeightDesc: "滑动左侧刻度盘来设置患者体重",
@@ -160,6 +163,7 @@ const translations = {
         pleaseFollow: "请严格遵医嘱使用，如出现不良反应请及时就医。",
         weightOutOfRange: "体重超出范围",
         checkWeight: "请检查体重输入是否正确 (0-100kg)",
+        checkWeightDartepp: "请检查体重输入是否正确 (5-100kg)", // D-Artepp专用
         selectProductAlert: "请先选择产品",
         // 注射途径选择
         injectionRoute: "注射途径",
@@ -232,6 +236,7 @@ const translations = {
         weightSelector: "Sélecteur de Poids",
         manualInput: "Ou saisir manuellement le poids",
         weightRange: "Plage: 0-100kg",
+        weightRangeDartepp: "Plage: 5-100kg", // D-Artepp专用
         dosagePlan: "Plan de Dosage Recommandé",
         selectWeight: "Veuillez sélectionner le poids",
         selectWeightDesc: "Faites glisser le cadran à gauche pour définir le poids du patient",
@@ -257,6 +262,7 @@ const translations = {
         pleaseFollow: "Veuillez suivre strictement les conseils médicaux. Consultez immédiatement un médecin en cas de réactions indésirables.",
         weightOutOfRange: "Poids hors limites",
         checkWeight: "Veuillez vérifier si la saisie du poids est correcte (0-100kg)",
+        checkWeightDartepp: "Veuillez vérifier si la saisie du poids est correcte (5-100kg)", // D-Artepp专用
         selectProductAlert: "Veuillez d'abord sélectionner un produit",
         // 注射途径选择
         injectionRoute: "Voie d'Injection",
@@ -486,6 +492,9 @@ function updatePageText() {
         // 更新计算器标题和描述
         updateCalculatorTitleAndDesc();
     }
+    
+    // 更新体重范围提示
+    updateWeightRangeHint();
 }
 
 // 更新计算器标题和描述
@@ -784,8 +793,8 @@ function initializeDarteppScale() {
         line.style.transform = `translateX(-50%) rotate(${angle}deg)`;
         scaleContainer.appendChild(line);
         
-        // 创建数字标签
-        if (kg % (2*majorStep) === 0 || kg === majorStep) {
+        // 创建数字标签（每10kg一个数字，加上5kg）
+        if (kg % 10 === 0 || kg === 5) {
             const number = document.createElement('div');
             number.className = 'scale-number';
             number.textContent = kg;
@@ -833,29 +842,14 @@ function setDarteppWeight(weight) {
 function setupDarteppQuickSelectButtons() {
     // 隐藏小于5kg的按钮
     document.querySelectorAll('.quick-select-button').forEach(button => {
-        const weight = parseInt(button.getAttribute('data-weight') || button.textContent.replace('kg', '').trim());
+        const weightText = button.textContent.replace('kg', '').trim();
+        const weight = parseInt(weightText);
         if (weight < 5) {
             button.style.display = 'none';
         } else {
             button.style.display = 'inline-flex';
         }
     });
-    
-    // 确保5kg按钮存在
-    const quickSelectContainer = document.querySelector('.quick-select-buttons');
-    if (quickSelectContainer) {
-        const existingWeights = Array.from(quickSelectContainer.querySelectorAll('.quick-select-button'))
-            .map(btn => parseInt(btn.getAttribute('data-weight') || btn.textContent.replace('kg', '').trim()));
-        
-        if (!existingWeights.includes(5)) {
-            const button = document.createElement('button');
-            button.className = 'quick-select-button bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition-colors';
-            button.setAttribute('data-weight', '5');
-            button.textContent = '5kg';
-            button.onclick = function() { setWeight(5); };
-            quickSelectContainer.insertBefore(button, quickSelectContainer.firstChild);
-        }
-    }
 }
 
 // 恢复通用快速选择按钮
@@ -983,6 +977,25 @@ function updateDialRotation() {
     updateWeightDisplay();
 }
 
+// 更新体重范围提示
+function updateWeightRangeHint() {
+    const weightRangeHint = document.getElementById('weightRangeHint');
+    if (!weightRangeHint) return;
+    
+    // 根据产品和语言更新范围提示
+    if (selectedProduct && selectedProduct.id === 'dartepp') {
+        // D-Artepp: 5-100kg
+        weightRangeHint.textContent = translations[currentLanguage].weightRangeDartepp || 'Range: 5-100kg';
+        weightRangeHint.style.color = '#ef4444';
+        weightRangeHint.style.fontWeight = '500';
+    } else {
+        // 其他产品: 0-100kg
+        weightRangeHint.textContent = translations[currentLanguage].weightRange || 'Range: 0-100kg';
+        weightRangeHint.style.color = '#6b7280';
+        weightRangeHint.style.fontWeight = 'normal';
+    }
+}
+
 // 更新体重显示
 function updateWeightDisplay() {
     const currentWeightDisplay = document.getElementById('currentWeight');
@@ -1014,6 +1027,9 @@ function updateWeightDisplay() {
         // 设置最小输入值
         manualWeightInput.min = selectedProduct?.id === 'dartepp' ? '5' : '0.1';
     }
+    
+    // 更新体重范围提示
+    updateWeightRangeHint();
     
     // 如果已选择产品，自动更新剂量显示
     if (selectedProduct) {
@@ -1279,6 +1295,9 @@ function showCalculatorInterface() {
         // 更新计算器标题和描述
         updateCalculatorTitleAndDesc();
         
+        // 更新体重范围提示
+        updateWeightRangeHint();
+        
         // 如果是Artesun，显示注射途径选择
         const routeSelector = document.getElementById('injectionRouteSelector');
         if (selectedProduct.id === 'artesun' && routeSelector) {
@@ -1370,8 +1389,9 @@ function showSelectWeightPrompt(container) {
 // 显示体重超出范围错误
 function showWeightOutOfRangeError(container) {
     // 根据产品显示不同的范围提示
-    const rangeText = selectedProduct?.id === 'dartepp' ? 
-        '5-100kg' : '0-100kg';
+    const checkWeightText = selectedProduct?.id === 'dartepp' ? 
+        translations[currentLanguage].checkWeightDartepp || 'Please check if weight input is correct (5-100kg)' :
+        translations[currentLanguage].checkWeight || 'Please check if weight input is correct (0-100kg)';
     
     container.innerHTML = `
         <div class="text-center text-red-500 py-8">
@@ -1379,7 +1399,7 @@ function showWeightOutOfRangeError(container) {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
             </svg>
             <p class="font-medium">${translations[currentLanguage].weightOutOfRange || 'Weight out of range'}</p>
-            <p class="text-sm">${translations[currentLanguage].checkWeight || 'Please check if weight input is correct'} (${rangeText})</p>
+            <p class="text-sm">${checkWeightText}</p>
         </div>
     `;
 }
