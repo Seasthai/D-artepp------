@@ -11,7 +11,7 @@ let currentRotation = 0;
 let currentLanguage = 'en'; // 默认语言为英语
 let injectionRoute = 'iv'; // 新增：默认静脉注射（'iv'或'im'）
 
-// 多语言翻译数据 - 添加D-Artepp专用范围提示
+// 多语言翻译数据 - 添加D-Artepp专用范围提示和Argesun溶液名称
 const translations = {
     en: {
         appTitle: "Medical Dosage Calculator",
@@ -110,7 +110,10 @@ const translations = {
         finalConcentration: "Final Concentration",
         // 新增
         alternativeOptions: "Alternative Options:",
-        optimalSelection: "Optimal Selection"
+        optimalSelection: "Optimal Selection",
+        // Argesun 溶液名称（新增）
+        solutionVolume: "Solution Volume",
+        bicarbonateSodiumArginine: "bicarbonate sodium and arginine"
     },
     zh: {
         appTitle: "医疗剂量计算器",
@@ -209,7 +212,10 @@ const translations = {
         finalConcentration: "最终浓度",
         // 新增
         alternativeOptions: "替代方案：",
-        optimalSelection: "最优选择"
+        optimalSelection: "最优选择",
+        // Argesun 溶液名称（新增）
+        solutionVolume: "溶液体积",
+        bicarbonateSodiumArginine: "碳酸氢钠和精氨酸"
     },
     fr: {
         appTitle: "Calculateur de Dosage Médical",
@@ -308,7 +314,10 @@ const translations = {
         finalConcentration: "Concentration finale",
         // 新增
         alternativeOptions: "Options Alternatives:",
-        optimalSelection: "Sélection Optimale"
+        optimalSelection: "Sélection Optimale",
+        // Argesun 溶液名称（新增）
+        solutionVolume: "Volume de Solution",
+        bicarbonateSodiumArginine: "bicarbonate de sodium et arginine"
     }
 };
 
@@ -1514,7 +1523,7 @@ function displayDarteppResult(container) {
     `;
 }
 
-// 显示Argesun结果
+// 显示Argesun结果 - 修改版：只显示溶液体积和注射体积
 function displayArgesunResult(container) {
     const result = findArgesunDosage(currentWeight);
     
@@ -1535,35 +1544,9 @@ function displayArgesunResult(container) {
     const vialText = getVialText();
     const mlText = currentLanguage === 'zh' ? '毫升' : 'ml';
     
-    // 获取替代方案
-    const alternatives = getArgesunAlternatives(result.combination);
-    
     // 构建规格显示HTML
     const strengthsHtml = Object.entries(result.recommendedStrengths).map(([strength, count]) => {
         const strengthInfo = argesunData.strengths.find(s => s.mg === parseInt(strength));
-        
-        // 查找此规格的替代方案
-        const strengthAlternatives = alternatives.filter(alt => {
-            const altStrength = parseInt(Object.keys(alt.recommendedStrengths)[0]);
-            return altStrength !== parseInt(strength) && 
-                   alt.totalMg >= result.totalDose * 0.95 && 
-                   alt.totalMg <= result.totalDose * 1.1;
-        });
-        
-        let alternativesHtml = '';
-        if (strengthAlternatives.length > 0) {
-            const altText = strengthAlternatives.map(alt => {
-                const altStrength = Object.keys(alt.recommendedStrengths)[0];
-                const altCount = alt.recommendedStrengths[altStrength];
-                return `${altCount} × ${altStrength}mg`;
-            }).join(', ');
-            
-            alternativesHtml = `
-                <div class="mt-2 text-xs text-gray-500">
-                    <span class="font-medium">${translations[currentLanguage].alternativeOptions || 'Alternative Options:'}</span> ${altText}
-                </div>
-            `;
-        }
         
         return `
             <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:shadow transition-shadow">
@@ -1577,7 +1560,6 @@ function displayArgesunResult(container) {
                             <div class="text-sm text-gray-600">
                                 ${translations[currentLanguage].reconstitutionVolume || 'Reconstitution volume'}: ${strengthInfo.solventVolume}${mlText}
                             </div>
-                            ${alternativesHtml}
                         </div>
                     </div>
                     <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-bold">
@@ -1605,40 +1587,48 @@ function displayArgesunResult(container) {
                 </div>
             </div>
             
-            <!-- 剂量公式 -->
-            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div class="font-medium text-blue-800 mb-2">${translations[currentLanguage].dosageFormula || 'Dosage formula:'}</div>
-                <div class="text-sm text-blue-700">
-                    ${result.isChild ? 
-                        `• ${translations[currentLanguage].forChildren || 'for children <20kg'}: ${argesunData.dosageFormula.child} mg/kg` :
-                        `• ${translations[currentLanguage].forAdults || 'for patients ≥20kg'}: ${argesunData.dosageFormula.adult} mg/kg`
-                    }
-                </div>
-                <div class="mt-2 text-lg font-bold text-blue-800">
-                    ${translations[currentLanguage].totalDose || 'Total dose'}: <span class="number-display">${result.totalDose.toFixed(1)} mg</span>
-                </div>
-                <div class="mt-1 text-sm text-blue-600">
-                    ${translations[currentLanguage].optimalSelection || 'Optimal Selection'}: ${result.combination.map(mg => `${mg}mg`).join(' + ')}
-                </div>
-            </div>
-            
-            <!-- 推荐规格 -->
+            <!-- 规格选择 -->
             <div class="space-y-3 mb-6">
                 <h5 class="font-medium text-gray-700">${translations[currentLanguage].selectStrength || 'Select Strength Combination'}:</h5>
                 ${strengthsHtml}
             </div>
             
-            <!-- 配制和注射信息 -->
+            <!-- 溶液体积和注射体积信息 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- 碳酸氢钠和精氨酸溶液体积 -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="font-medium text-gray-700 mb-2">${translations[currentLanguage].reconstitutionVolume || 'Reconstitution Volume'}</div>
-                    <div class="text-2xl font-bold text-green-600 number-display">${result.reconstitutionVolume} ${mlText}</div>
-                    <div class="text-sm text-gray-500 mt-1">${translations[currentLanguage].singleSolvent || 'Single-solvent system'}</div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <div class="text-sm text-gray-600 mb-1">${translations[currentLanguage].solutionVolume || 'Solution Volume'}</div>
+                            <div class="text-2xl font-bold text-blue-600 number-display">${result.reconstitutionVolume} ${mlText}</div>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">
+                        ${translations[currentLanguage].bicarbonateSodiumArginine || 'bicarbonate sodium and arginine'}
+                    </div>
                 </div>
+                
+                <!-- 注射体积 -->
                 <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="font-medium text-gray-700 mb-2">${translations[currentLanguage].injectionVolume || 'Injection Volume'}</div>
-                    <div class="text-2xl font-bold text-purple-600 number-display">${result.injectionVolume.toFixed(1)} ${mlText}</div>
-                    <div class="text-sm text-gray-500 mt-1">Concentration: ${result.concentration}</div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <div class="text-sm text-gray-600 mb-1">${translations[currentLanguage].injectionVolume || 'Injection Volume'}</div>
+                            <div class="text-2xl font-bold text-green-600 number-display">${result.injectionVolume.toFixed(1)} ${mlText}</div>
+                        </div>
+                        <div class="bg-green-50 p-2 rounded-lg">
+                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">
+                        ${translations[currentLanguage].finalConcentration || 'Final Concentration'}: ${result.concentration}
+                    </div>
                 </div>
             </div>
             
