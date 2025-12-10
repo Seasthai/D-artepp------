@@ -2145,7 +2145,7 @@ function findArtesunDosage(weight) {
     
     // 应用新的归类规则
     let roundedInjectionVolume;
-    const isChild = weight <= 20;
+    const isChild = weight < 20;
     
     if (injectionRoute === 'iv') {
         // IV规则
