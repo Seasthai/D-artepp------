@@ -19,14 +19,14 @@ const translations = {
         navMedications: "Medications",
         selectProduct: "Select Product",
         selectProductDesc: "Please select the product for dosage calculation",
-        darteappDesc: "Antimalarial Dosage Calculator",
+        darteppDesc: "Antimalarial Dosage Calculator",
         artesunDesc: "Artesunate for Injection",
         argesunDesc: "Artesunate Injection Dosage Calculator",
         recommended: "Recommended",
         comingSoon: "Coming Soon",
-        // D-Arteapp
-        darteappCalculatorTitle: "D-Arteapp® Dosage Calculation",
-        darteappCalculatorDesc: "Select patient weight, system will automatically calculate recommended D-Arteapp® dosage",
+        // D-Artepp
+        darteppCalculatorTitle: "D-Artepp® Dosage Calculation",
+        darteppCalculatorDesc: "Select patient weight, system will automatically calculate recommended D-Artepp® dosage",
         // Argesun
         argesunCalculatorTitle: "Argesun® Dosage Calculation",
         argesunCalculatorDesc: "Select patient weight, system will calculate recommended Argesun® injection dosage",
@@ -44,9 +44,9 @@ const translations = {
         backToProducts: "Back to Products",
         footerCopyright: "© 2025 Medical Dosage Calculator. Professional medical tool for safe medication.",
         footerDisclaimer: "This tool is for reference only, please follow medical advice for actual medication.",
-        // D-Arteapp 结果
-        darteappDosageResultTitle: "D-Arteapp® dosage based on weight",
-        darteappDosageResultSubtitle: "D-Arteapp® - Three-day treatment plan",
+        // D-Artepp 结果
+        darteppDosageResultTitle: "D-Artepp® dosage based on weight",
+        darteppDosageResultSubtitle: "D-Artepp® - Three-day treatment plan",
         // Argesun 结果
         argesunDosageResultTitle: "Argesun® dosage based on weight",
         argesunDosageResultSubtitle: "Argesun® - Injectable Artesunate (Single Solvent)",
@@ -116,14 +116,14 @@ const translations = {
         navMedications: "药品信息",
         selectProduct: "选择产品",
         selectProductDesc: "请选择您需要计算剂量的产品",
-        darteappDesc: "抗疟疾药物剂量计算器",
+        darteppDesc: "抗疟疾药物剂量计算器",
         artesunDesc: "注射用青蒿琥酯",
         argesunDesc: "注射用青蒿琥酯剂量计算器",
         recommended: "推荐产品",
         comingSoon: "即将推出",
-        // D-Arteapp
-        darteappCalculatorTitle: "D-Arteapp® 剂量计算",
-        darteappCalculatorDesc: "选择患者体重，系统将计算推荐的D-Arteapp®剂量",
+        // D-Artepp
+        darteppCalculatorTitle: "D-Artepp® 剂量计算",
+        darteppCalculatorDesc: "选择患者体重，系统将计算推荐的D-Artepp®剂量",
         // Argesun
         argesunCalculatorTitle: "Argesun® 剂量计算",
         argesunCalculatorDesc: "选择患者体重，系统将计算推荐的Argesun®注射剂量",
@@ -141,9 +141,9 @@ const translations = {
         backToProducts: "返回产品选择",
         footerCopyright: "© 2025 医疗剂量计算器. 专业医疗工具，确保用药安全.",
         footerDisclaimer: "本工具仅供参考，实际用药请遵循医嘱",
-        // D-Arteapp 结果
-        darteappDosageResultTitle: "基于体重 {weight}kg 的D-Arteapp®剂量",
-        darteappDosageResultSubtitle: "D-Arteapp® - 三日疗程方案",
+        // D-Artepp 结果
+        darteppDosageResultTitle: "基于体重 {weight}kg 的D-Artepp®剂量",
+        darteppDosageResultSubtitle: "D-Artepp® - 三日疗程方案",
         // Argesun 结果
         argesunDosageResultTitle: "基于体重 {weight}kg 的Argesun®剂量",
         argesunDosageResultSubtitle: "Argesun® - 注射用青蒿琥酯 (单一溶剂)",
@@ -213,14 +213,14 @@ const translations = {
         navMedications: "Médicaments",
         selectProduct: "Sélectionner le Produit",
         selectProductDesc: "Veuillez sélectionner le produit pour le calcul de dosage",
-        darteappDesc: "Calculateur de Dosage Antipaludique",
+        darteppDesc: "Calculateur de Dosage Antipaludique",
         artesunDesc: "Artesunate pour Injection",
         argesunDesc: "Calculateur de Dosage Artesunate Injectible",
         recommended: "Recommandé",
         comingSoon: "Prochainement",
-        // D-Arteapp
-        darteappCalculatorTitle: "Calcul de Dosage D-Arteapp®",
-        darteappCalculatorDesc: "Sélectionnez le poids du patient en faisant glisser le cadran, le système calculera le dosage recommandé D-Arteapp®",
+        // D-Artepp
+        darteppCalculatorTitle: "Calcul de Dosage D-Artepp®",
+        darteppCalculatorDesc: "Sélectionnez le poids du patient en faisant glisser le cadran, le système calculera le dosage recommandé D-Artepp®",
         // Argesun
         argesunCalculatorTitle: "Calcul de Dosage Argesun®",
         argesunCalculatorDesc: "Sélectionnez le poids du patient, le système calculera le dosage recommandé d'Argesun® par injection",
@@ -238,9 +238,9 @@ const translations = {
         backToProducts: "Retour aux Produits",
         footerCopyright: "© 2025 Calculateur de Dosage Médical. Outil médical professionnel pour une médication sûre.",
         footerDisclaimer: "Cet outil est à titre indicatif seulement, suivez les conseils médicaux pour la médication réelle.",
-        // D-Arteapp 结果
-        darteappDosageResultTitle: "Dosage D-Arteapp® basé sur le poids",
-        darteappDosageResultSubtitle: "D-Arteapp® - Plan de traitement de trois jours",
+        // D-Artepp 结果
+        darteppDosageResultTitle: "Dosage D-Artepp® basé sur le poids",
+        darteppDosageResultSubtitle: "D-Artepp® - Plan de traitement de trois jours",
         // Argesun 结果
         argesunDosageResultTitle: "Dosage Argesun® basé sur le poids",
         argesunDosageResultSubtitle: "Argesun® - Artesunate Injectible (Solvant Unique)",
@@ -306,10 +306,10 @@ const translations = {
     }
 };
 
-// D-Arteapp 产品数据
-const darteappData = {
-    id: 'darteapp',
-    name: 'D-Arteapp®',
+// D-Artepp 产品数据
+const darteppData = {
+    id: 'dartepp',
+    name: 'D-Artepp®',
     description: {
         en: 'Antimalarial Dosage Calculator',
         zh: '抗疟疾药物剂量计算器',
@@ -497,9 +497,9 @@ function updateCalculatorTitleAndDesc() {
     
     if (!calculatorTitle || !calculatorDesc) return;
     
-    if (selectedProduct.id === 'darteapp') {
-        calculatorTitle.textContent = translations[currentLanguage].darteappCalculatorTitle || 'D-Arteapp® Dosage Calculation';
-        calculatorDesc.textContent = translations[currentLanguage].darteappCalculatorDesc || 'Select patient weight by sliding the dial, system will calculate recommended D-Arteapp® dosage';
+    if (selectedProduct.id === 'dartepp') {
+        calculatorTitle.textContent = translations[currentLanguage].darteppCalculatorTitle || 'D-Artepp® Dosage Calculation';
+        calculatorDesc.textContent = translations[currentLanguage].darteppCalculatorDesc || 'Select patient weight by sliding the dial, system will calculate recommended D-Artepp® dosage';
     } else if (selectedProduct.id === 'argesun') {
         calculatorTitle.textContent = translations[currentLanguage].argesunCalculatorTitle || 'Argesun® Dosage Calculation';
         calculatorDesc.textContent = translations[currentLanguage].argesunCalculatorDesc || 'Select patient weight, system will calculate recommended Argesun® dosage';
@@ -1004,8 +1004,8 @@ function handleManualWeightKeyDown(event) {
 
 // 产品选择功能 - 这个函数会被HTML中的onclick调用
 function selectProduct(product) {
-    if (product === 'darteapp') {
-        selectedProduct = darteappData;
+    if (product === 'dartepp') {
+        selectedProduct = darteppData;
         showCalculatorInterface();
     } else if (product === 'argesun') {
         selectedProduct = argesunData;
@@ -1077,8 +1077,8 @@ function showProductSelection() {
 function getDosageResultTitle(weight) {
     let titleTemplate;
     
-    if (selectedProduct.id === 'darteapp') {
-        titleTemplate = translations[currentLanguage].darteappDosageResultTitle || 'D-Arteapp® dosage based on weight';
+    if (selectedProduct.id === 'dartepp') {
+        titleTemplate = translations[currentLanguage].darteppDosageResultTitle || 'D-Artepp® dosage based on weight';
     } else if (selectedProduct.id === 'argesun') {
         titleTemplate = translations[currentLanguage].argesunDosageResultTitle || 'Argesun® dosage based on weight';
     } else if (selectedProduct.id === 'artesun') {
@@ -1099,8 +1099,8 @@ function getDosageResultTitle(weight) {
 
 // 获取产品副标题
 function getProductSubtitle() {
-    if (selectedProduct.id === 'darteapp') {
-        return translations[currentLanguage].darteappDosageResultSubtitle || 'D-Arteapp® - Three-day treatment plan';
+    if (selectedProduct.id === 'dartepp') {
+        return translations[currentLanguage].darteppDosageResultSubtitle || 'D-Artepp® - Three-day treatment plan';
     } else if (selectedProduct.id === 'argesun') {
         return translations[currentLanguage].argesunDosageResultSubtitle || 'Argesun® - Injectable Artesunate (Single Solvent)';
     } else if (selectedProduct.id === 'artesun') {
@@ -1147,8 +1147,8 @@ function updateDosageDisplay() {
     }
     
     // 根据产品类型选择不同的计算和显示方式
-    if (selectedProduct.id === 'darteapp') {
-        displayDarteappResult(dosageResult);
+    if (selectedProduct.id === 'dartepp') {
+        displayDarteppResult(dosageResult);
     } else if (selectedProduct.id === 'argesun') {
         displayArgesunResult(dosageResult);
     } else if (selectedProduct.id === 'artesun') {
@@ -1156,8 +1156,8 @@ function updateDosageDisplay() {
     }
 }
 
-// 显示D-Arteapp结果
-function displayDarteappResult(container) {
+// 显示D-Artepp结果
+function displayDarteppResult(container) {
     const result = findDosageRecommendation(currentWeight);
     
     if (!result) {
@@ -1598,14 +1598,14 @@ function displayArtesunResult(container) {
 
 // ==================== 剂量计算核心算法 ====================
 
-// 查找D-Arteapp剂量推荐
+// 查找D-Artepp剂量推荐
 function findDosageRecommendation(weight) {
     if (weight < 5 || weight > 100) return null;
     
     const dosages = [];
     
     // 检查 D-ARTEPP Dispersible
-    const dispersible = darteappData.types[0];
+    const dispersible = darteppData.types[0];
     for (const spec of dispersible.specifications) {
         for (const range of spec.weightRanges) {
             if (weight >= range.min && weight < range.max) {
@@ -1620,7 +1620,7 @@ function findDosageRecommendation(weight) {
     }
     
     // 检查 D-ARTEPP
-    const regular = darteappData.types[1];
+    const regular = darteppData.types[1];
     for (const spec of regular.specifications) {
         for (const range of spec.weightRanges) {
             if (weight >= range.min && weight < range.max) {
