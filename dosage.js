@@ -1,5 +1,5 @@
 // dosage.js - 剂量计算模块
-// 版本：v8.8 - 修正：Recommended中只显示最优方案，其他放Alternatives
+// 版本：v8.9 - 修正：注射体积基于实际计算，向上取整到个位数，去掉固定归位规则
 
 // 使用函数获取器而不是直接变量
 let getCurrentWeight, getSelectedProduct, getInjectionRoute, getCurrentLanguage;
@@ -480,42 +480,18 @@ export function findArtesunDosage(weight) {
         }
     });
     
-    // 计算最终注射体积 - 根据你的新规则
+    // 计算最终注射体积 - 基于实际计算，向上取整到个位数
     const concentration = injectionRoute === 'iv' ? selectedProduct.concentrations.iv : selectedProduct.concentrations.im;
     const exactInjectionVolume = totalDose / concentration;
     
-    // 应用新的归类规则
-    let roundedInjectionVolume;
-    const isChild = weight < 20;
-    
-    if (injectionRoute === 'iv') {
-        // IV规则
-        if (isChild) {
-            // 儿童（<20kg）：小于等于2ml自动归类到2ml
-            roundedInjectionVolume = exactInjectionVolume <= 2 ? 2 : exactInjectionVolume;
-        } else {
-            // 成人（≥20kg）：自动归类到7ml
-            roundedInjectionVolume = exactInjectionVolume <= 7 ? 7 : exactInjectionVolume;
-        }
-    } else {
-        // IM规则
-        if (isChild) {
-            // 儿童（<20kg）：小于1ml自动归类到1ml
-            roundedInjectionVolume = exactInjectionVolume < 1 ? 1 : exactInjectionVolume;
-        } else {
-            // 成人（≥20kg）：自动归类到4ml
-            roundedInjectionVolume = exactInjectionVolume <= 4 ? 4 : exactInjectionVolume;
-        }
-    }
-    
-    // 确保体积是合理的数值
-    roundedInjectionVolume = parseFloat(roundedInjectionVolume.toFixed(2));
+    // 应用新的注射体积计算规则：向上取整到个位数
+    const roundedInjectionVolume = Math.ceil(exactInjectionVolume);
     
     return {
         weight: weight,
         totalDose: totalDose,
         dosagePerKg: dosagePerKg,
-        isChild: isChild,
+        isChild: weight < 20,
         recommendedStrengths: strengthCounts,
         combination: combination, // 保存实际的组合数组
         totalMg: totalMg, // 实际使用的总毫克数
@@ -951,44 +927,6 @@ export function displayArgesunResult(container) {
     `;
 }
 
-function getArgesunAlternatives(currentCombination, product) {
-    if (!product || !product.strengths) return [];
-    
-    const strengths = product.strengths.map(s => s.mg).sort((a, b) => b - a);
-    const currentTotal = currentCombination.reduce((sum, mg) => sum + mg, 0);
-    const alternatives = [];
-    
-    // 生成可能的替代组合
-    for (let i = 0; i < strengths.length; i++) {
-        const altCombination = [];
-        const altStrength = strengths[i];
-        
-        // 尝试使用单一规格
-        const count = Math.ceil(currentTotal / altStrength);
-        for (let j = 0; j < count; j++) {
-            altCombination.push(altStrength);
-        }
-        
-        const altTotal = altCombination.reduce((sum, mg) => sum + mg, 0);
-        
-        // 只添加合理的替代方案（不超过当前总剂量的±10%）
-        if (altTotal >= currentTotal * 0.95 && altTotal <= currentTotal * 1.1) {
-            const strengthCounts = {};
-            altCombination.forEach(mg => {
-                strengthCounts[mg] = (strengthCounts[mg] || 0) + 1;
-            });
-            
-            alternatives.push({
-                combination: altCombination,
-                totalMg: altTotal,
-                recommendedStrengths: strengthCounts
-            });
-        }
-    }
-    
-    return alternatives;
-}
-
 // 显示Artesun结果
 export function displayArtesunResult(container) {
     const { currentWeight, selectedProduct, injectionRoute, currentLanguage } = getCurrentValues();
@@ -1057,7 +995,7 @@ export function displayArtesunResult(container) {
         `;
     }).join('');
     
-    // 核心信息卡片 - 修改后去掉总剂量
+    // 核心信息卡片
     const coreInfoCards = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <!-- 碳酸氢钠体积 -->
@@ -1100,21 +1038,21 @@ export function displayArtesunResult(container) {
         </div>
     `;
     
-    // 患者最终用量信息
+    // 患者最终用量信息 - 只显示最终注射体积
     const patientInjectionInfo = `
-    <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h5 class="font-bold text-lg text-blue-800">${window.translations?.[currentLanguage]?.patientInjection || 'Patient Final Injection'}</h5>
-                <p class="text-sm text-blue-600">${isIV ? window.translations?.[currentLanguage]?.ivRouteDesc || 'Slow IV injection' : window.translations?.[currentLanguage]?.imRouteDesc || 'IM injection'}</p>
-            </div>
-            <div class="text-right">
-                <div class="text-3xl font-bold text-green-700">${result.roundedInjectionVolume} ${mlText}</div>
-                <div class="text-sm text-gray-600">${window.translations?.[currentLanguage]?.finalInjectionVolume || 'Final volume'}</div>
+        <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div>
+                    <h5 class="font-bold text-lg text-blue-800 mb-1">${window.translations?.[currentLanguage]?.patientInjection || 'Patient Final Injection'}</h5>
+                    <p class="text-sm text-blue-600">${isIV ? window.translations?.[currentLanguage]?.ivRouteDesc || 'Slow IV injection' : window.translations?.[currentLanguage]?.imRouteDesc || 'IM injection'}</p>
+                </div>
+                <div class="mt-3 md:mt-0 text-center md:text-right">
+                    <div class="text-3xl font-bold text-green-700">${result.roundedInjectionVolume} ${mlText}</div>
+                    <div class="text-sm text-gray-600">${window.translations?.[currentLanguage]?.finalInjectionVolume || 'Final injection volume'}</div>
+                </div>
             </div>
         </div>
-    </div>
-`;
+    `;
     
     container.innerHTML = `
         <div class="dosage-result p-6 rounded-lg bg-white">
