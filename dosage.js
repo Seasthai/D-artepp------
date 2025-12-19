@@ -1,5 +1,5 @@
 // dosage.js - 剂量计算模块
-// 版本：v8.11 - 优化：仅37.5-50kg统一使用1盒120mg，备选方案特定显示
+// 版本：v8.14 - 修复：备选方案体积显示格式化
 
 // 使用函数获取器而不是直接变量
 let getCurrentWeight, getSelectedProduct, getInjectionRoute, getCurrentLanguage;
@@ -495,13 +495,13 @@ export function findArtesunDosage(weight) {
         recommendedStrengths: strengthCounts,
         combination: combination, // 保存实际的组合数组
         totalMg: totalMg, // 实际使用的总毫克数
-        totalBicarbonateVolume: parseFloat(totalBicarbonateVolume.toFixed(1)),
-        totalSalineVolume: parseFloat(totalSalineVolume.toFixed(1)),
-        exactInjectionVolume: parseFloat(exactInjectionVolume.toFixed(2)),
+        totalBicarbonateVolume: totalBicarbonateVolume, // 不进行格式化
+        totalSalineVolume: totalSalineVolume, // 不进行格式化
+        exactInjectionVolume: exactInjectionVolume,
         roundedInjectionVolume: roundedInjectionVolume,
         concentration: concentration,
         route: injectionRoute,
-        alternatives: getSpecificAlternatives(totalDose, totalMg) // 获取特定备选方案
+        alternatives: getSpecificAlternatives(totalDose, totalMg, selectedProduct, injectionRoute) // 获取特定备选方案
     };
 }
 
@@ -619,22 +619,74 @@ function optimizeArtesunCombination(combination, totalDose, product) {
 }
 
 // 获取特定的备选方案
-function getSpecificAlternatives(totalDose, totalMg) {
+function getSpecificAlternatives(totalDose, totalMg, selectedProduct, injectionRoute) {
     const alternatives = [];
     
     // 只有在最优方案总剂量为90mg时，提供1盒120mg作为备选
     if (totalMg === 90) {
+        const combination = [120];
+        let totalBicarbonateVolume = 0;
+        let totalSalineVolumeIV = 0;
+        let totalSalineVolumeIM = 0;
+        
+        // 按照最优方案的计算逻辑计算碳酸氢钠和氯化钠体积
+        combination.forEach(strength => {
+            const strengthInfo = selectedProduct.strengths.find(s => s.mg === strength);
+            if (strengthInfo) {
+                totalBicarbonateVolume += strengthInfo.bicarbonateVolume;
+                totalSalineVolumeIV += strengthInfo.salineVolume; // IV用量
+                totalSalineVolumeIM += strengthInfo.imSalineVolume; // IM用量
+            }
+        });
+        
+        const salineVolume = injectionRoute === 'iv' ? totalSalineVolumeIV : totalSalineVolumeIM;
+        const concentration = injectionRoute === 'iv' ? selectedProduct.concentrations.iv : selectedProduct.concentrations.im;
+        const exactInjectionVolume = totalDose / concentration;
+        const roundedInjectionVolume = Math.ceil(exactInjectionVolume);
+        
         alternatives.push({
             recommendedStrengths: { 120: 1 },
-            description: "1 vial × 120mg"
+            combination: combination,
+            totalMg: 120,
+            totalBicarbonateVolume: totalBicarbonateVolume,
+            totalSalineVolumeIV: totalSalineVolumeIV,
+            totalSalineVolumeIM: totalSalineVolumeIM,
+            exactInjectionVolume: exactInjectionVolume,
+            roundedInjectionVolume: roundedInjectionVolume
         });
     }
     
-    // 只有在最优方案总剂量为180mg时，提供2盒120mg作为备选
+    // 只有在最优方案总剂量为210mg时，提供2盒120mg作为备选
     if (totalMg === 210) {
+        const combination = [120, 120];
+        let totalBicarbonateVolume = 0;
+        let totalSalineVolumeIV = 0;
+        let totalSalineVolumeIM = 0;
+        
+        // 按照最优方案的计算逻辑计算碳酸氢钠和氯化钠体积
+        combination.forEach(strength => {
+            const strengthInfo = selectedProduct.strengths.find(s => s.mg === strength);
+            if (strengthInfo) {
+                totalBicarbonateVolume += strengthInfo.bicarbonateVolume;
+                totalSalineVolumeIV += strengthInfo.salineVolume; // IV用量
+                totalSalineVolumeIM += strengthInfo.imSalineVolume; // IM用量
+            }
+        });
+        
+        const salineVolume = injectionRoute === 'iv' ? totalSalineVolumeIV : totalSalineVolumeIM;
+        const concentration = injectionRoute === 'iv' ? selectedProduct.concentrations.iv : selectedProduct.concentrations.im;
+        const exactInjectionVolume = totalDose / concentration;
+        const roundedInjectionVolume = Math.ceil(exactInjectionVolume);
+        
         alternatives.push({
             recommendedStrengths: { 120: 2 },
-            description: "2 vials × 120mg"
+            combination: combination,
+            totalMg: 240,
+            totalBicarbonateVolume: totalBicarbonateVolume,
+            totalSalineVolumeIV: totalSalineVolumeIV,
+            totalSalineVolumeIM: totalSalineVolumeIM,
+            exactInjectionVolume: exactInjectionVolume,
+            roundedInjectionVolume: roundedInjectionVolume
         });
     }
     
@@ -974,29 +1026,49 @@ export function displayArtesunResult(container) {
     const mlText = currentLanguage === 'zh' ? '毫升' : 'ml';
     const mgText = currentLanguage === 'zh' ? '毫克' : 'mg';
     const vialText = window.translations?.[currentLanguage]?.vial || 'vial';
+    const isIVText = isIV ? 'IV' : 'IM';
     
-    // 构建规格显示HTML
-    const strengthsHtml = Object.entries(result.recommendedStrengths).map(([strength, count]) => {
+    // 辅助函数：格式化体积显示（整数去掉小数部分，小数保留一位）
+    const formatVolume = (volume) => {
+        // 检查是否是整数
+        if (Number.isInteger(volume)) {
+            return volume.toString(); // 整数直接返回
+        }
+        // 保留一位小数
+        return volume.toFixed(1);
+    };
+    
+    // 构建最优方案的药品图片HTML
+    const optimalStrengthHtml = Object.entries(result.recommendedStrengths).map(([strength, count]) => {
         const strengthInfo = selectedProduct.strengths.find(s => s.mg === parseInt(strength));
+        const bicarbonatePerVial = strengthInfo?.bicarbonateVolume || 0;
+        const salinePerVial = isIV ? (strengthInfo?.salineVolume || 0) : (strengthInfo?.imSalineVolume || 0);
         
         return `
-            <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:shadow transition-shadow">
-                <div class="flex justify-between items-center">
+            <div class="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                            <span class="font-bold text-blue-700 text-lg">${strength}</span>
+                        <!-- 药品图片 -->
+                        <div class="relative w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mr-4 border border-blue-300">
+                            <div class="text-center">
+                                <div class="font-bold text-blue-700 text-xl">${strength}</div>
+                                <div class="text-xs text-blue-600 mt-1">${mgText}</div>
+                            </div>
                         </div>
                         <div>
                             <div class="font-semibold text-gray-800">Artesun® ${strength}${mgText}</div>
-                            <div class="text-sm text-gray-600 space-y-1">
-                                <div>${window.translations?.[currentLanguage]?.bicarbonateVolume || 'Bicarbonate'}: ${strengthInfo?.bicarbonateVolume || 0}${mlText}</div>
-                                <div>${window.translations?.[currentLanguage]?.salineVolume || 'Saline'}: ${isIV ? strengthInfo?.salineVolume || 0 : strengthInfo?.imSalineVolume || 0}${mlText}</div>
+                            <div class="text-sm text-gray-600">
+                                <div>${window.translations?.[currentLanguage]?.bicarbonateVolume || 'Bicarbonate'}: ${formatVolume(bicarbonatePerVial)}${mlText}</div>
+                                <div>${window.translations?.[currentLanguage]?.salineVolume || 'Saline'} (${isIVText}): ${formatVolume(salinePerVial)}${mlText}</div>
                             </div>
                         </div>
                     </div>
                     <span class="px-3 py-2 bg-green-100 text-green-800 rounded-full font-bold">
                         ${count} ${vialText}${currentLanguage === 'zh' ? '' : (count > 1 ? 's' : '')}
                     </span>
+                </div>
+                <div class="mt-2 text-xs text-blue-600 font-medium">
+                    ${window.translations?.[currentLanguage]?.optimalSelection || 'Optimal Selection'}
                 </div>
             </div>
         `;
@@ -1018,51 +1090,55 @@ export function displayArtesunResult(container) {
         </div>
     `;
     
-    // 备选方案 - 只在特定情况下显示
+    // 备选方案 - 只在特定情况下显示，样式与最优方案一致
     let alternativesHtml = '';
     if (result.alternatives && result.alternatives.length > 0) {
-        const alternativeText = result.alternatives.map(alt => {
-            return Object.entries(alt.recommendedStrengths)
-                .map(([strength, count]) => {
-                    const pluralSuffix = currentLanguage === 'zh' ? '' : (count > 1 ? 's' : '');
-                    return `${count} ${vialText}${pluralSuffix} × ${strength}${mgText}`;
-                })
-                .join(' + ');
-        }).join('; ');
-        
         alternativesHtml = `
-            <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div class="text-sm text-gray-700 mb-1 font-medium">
+            <div class="mt-6">
+                <h5 class="font-medium text-gray-700 mb-3 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                     ${window.translations?.[currentLanguage]?.alternativeOptions || 'Alternative Options'}:
-                </div>
-                <div class="text-sm text-gray-600">
-                    ${alternativeText}
+                </h5>
+                <div class="space-y-3">
+                    ${result.alternatives.map(alt => {
+                        const altBicarbonateTotal = alt.totalBicarbonateVolume;
+                        const altSalineTotal = isIV ? alt.totalSalineVolumeIV : alt.totalSalineVolumeIM;
+                        
+                        return Object.entries(alt.recommendedStrengths).map(([strength, count]) => {
+                            const pluralSuffix = currentLanguage === 'zh' ? '' : (count > 1 ? 's' : '');
+                            return `
+                                <div class="bg-white rounded-lg p-4 mb-3 border-2 border-gray-200 hover:shadow-md transition-shadow">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <div class="flex items-center">
+                                            <!-- 药品图片 -->
+                                            <div class="relative w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mr-4 border border-gray-300">
+                                                <div class="text-center">
+                                                    <div class="font-bold text-gray-700 text-xl">${strength}</div>
+                                                    <div class="text-xs text-gray-600 mt-1">${mgText}</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-gray-800">Artesun® ${strength}${mgText}</div>
+                                                <div class="text-sm text-gray-600">
+                                                    <div>${window.translations?.[currentLanguage]?.bicarbonateVolume || 'Bicarbonate'}: ${formatVolume(altBicarbonateTotal)}${mlText}</div>
+                                                    <div>${window.translations?.[currentLanguage]?.salineVolume || 'Saline'} (${isIVText}): ${formatVolume(altSalineTotal)}${mlText}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="px-3 py-2 bg-gray-100 text-gray-800 rounded-full font-bold">
+                                            ${count} ${vialText}${pluralSuffix}
+                                        </span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }).join('')}
                 </div>
             </div>
         `;
     }
-    
-    // 溶液体积信息
-    const solutionVolumesInfo = `
-        <div class="mb-6">
-            ${alternativesHtml}
-            
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-white p-3 rounded border border-gray-300">
-                        <div class="text-sm text-gray-600 mb-1">${window.translations?.[currentLanguage]?.bicarbonateVolume || 'Bicarbonate Volume'}</div>
-                        <div class="text-xl font-bold text-gray-800">${result.totalBicarbonateVolume} ${mlText}</div>
-                        <div class="text-xs text-gray-500 mt-1">${window.translations?.[currentLanguage]?.useAllBicarbonate || 'Use all content of bicarbonate ampoule'}</div>
-                    </div>
-                    <div class="bg-white p-3 rounded border border-gray-300">
-                        <div class="text-sm text-gray-600 mb-1">${window.translations?.[currentLanguage]?.salineVolume || 'Saline Volume'}</div>
-                        <div class="text-xl font-bold text-gray-800">${result.totalSalineVolume} ${mlText}</div>
-                        <div class="text-xs text-gray-500 mt-1">${window.translations?.[currentLanguage]?.removeAir || 'Remove air from ampoule before saline injection'}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
     
     container.innerHTML = `
         <div class="dosage-result p-6 rounded-lg bg-white">
@@ -1084,17 +1160,17 @@ export function displayArtesunResult(container) {
             <!-- 患者最终用量信息 -->
             ${patientInjectionInfo}
             
-            <!-- 规格选择 -->
+            <!-- 最优方案 -->
             <div class="mb-6">
                 <h5 class="font-medium text-gray-700 mb-3">${window.translations?.[currentLanguage]?.selectStrength || 'Select Strength'}:</h5>
                 <div class="mb-2 text-sm text-blue-600">
                     ${window.translations?.[currentLanguage]?.optimalSelection || 'Optimal Selection'}: ${result.combination.map(mg => `${mg}mg`).join(' + ')} (Total: ${result.totalMg}${mgText})
                 </div>
-                ${strengthsHtml}
+                ${optimalStrengthHtml}
             </div>
             
-            <!-- 溶液体积信息（包含上面的备选方案） -->
-            ${solutionVolumesInfo}
+            <!-- 备选方案 -->
+            ${alternativesHtml}
             
             <!-- 重要警告 -->
             <div class="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
