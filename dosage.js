@@ -699,6 +699,7 @@ function getSpecificAlternatives(totalDose, totalMg, selectedProduct, injectionR
 }
 
 // 显示D-Artepp结果
+// 显示D-Artepp结果 - 已更新：加大mg规格显示
 export function displayDarteppResult(container) {
     const { currentWeight, currentLanguage } = getCurrentValues();
     const result = findDosageRecommendation(currentWeight);
@@ -742,6 +743,21 @@ export function displayDarteppResult(container) {
         }
     };
     
+    // 解析规格字符串，提取mg信息并加粗显示
+    const formatSpecification = (spec) => {
+        // 规格可能是 "20mg/120mg" 或 "40mg/240mg" 等形式
+        // 我们要让mg部分更明显
+        const parts = spec.split('/');
+        return parts.map(part => {
+            // 如果包含mg，加粗显示数字部分
+            if (part.includes('mg')) {
+                const num = part.replace('mg', '');
+                return `<span class="font-bold text-lg text-blue-700">${num}<span class="text-sm">mg</span></span>`;
+            }
+            return part;
+        }).join('/');
+    };
+    
     // 最优方案显示
     const bestOption = result.bestOption;
     const tabletText = getTabletText(bestOption.count);
@@ -753,26 +769,37 @@ export function displayDarteppResult(container) {
         <div class="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200 hover:shadow-md transition-shadow">
             <div class="flex justify-between items-center mb-2">
                 <div>
-                    <span class="font-semibold text-gray-800">${medicationType(bestOption)}</span>
-                    <span class="ml-2 text-sm text-gray-600">${bestOption.specification}</span>
+                    <div class="font-semibold text-gray-800 mb-1">${medicationType(bestOption)}</div>
+                    <div class="text-gray-700">
+                        <!-- 修改这里：加大并加粗显示规格 -->
+                        <div class="flex items-center space-x-1">
+                            <span class="text-base text-gray-600"></span>
+                            ${formatSpecification(bestOption.specification)}
+                        </div>
+                    </div>
                 </div>
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-bold">
-                    ${countDisplay} ${tabletText}
-                </span>
+                <div class="text-right">
+                    <span class="inline-block px-3 py-2 bg-blue-100 text-blue-800 rounded-full font-bold text-lg">
+                        ${countDisplay} ${tabletText}
+                    </span>
+                </div>
             </div>
-            <div class="text-sm text-gray-600">
+            <div class="text-sm text-gray-600 mt-3">
                 ${window.translations?.[currentLanguage]?.dosageInstruction || 'Recommended dosage:'} 
                 ${window.translations?.[currentLanguage]?.takeDaily || 'Take daily'} 
-                ${countDisplay} ${tabletText} 
+                <span class="font-bold text-blue-700">${countDisplay} ${tabletText}</span>
                 ${window.translations?.[currentLanguage]?.forDays || 'for 3 days'}
             </div>
-            <div class="mt-2 text-xs text-blue-600 font-medium">
+            <div class="mt-2 text-xs text-blue-600 font-medium flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
                 ${window.translations?.[currentLanguage]?.optimalSelection || 'Optimal Selection (Fewest Tablets)'}
             </div>
         </div>
     `;
     
-    // 备选方案显示
+    // 备选方案显示 - 也更新这里的规格显示
     let alternativesHtml = '';
     if (result.alternatives && result.alternatives.length > 0) {
         // 去重：避免重复的备选方案
@@ -809,8 +836,14 @@ export function displayDarteppResult(container) {
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-colors">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <div class="font-medium text-gray-800 text-sm">${medicationType(alt)}</div>
-                                        <div class="text-xs text-gray-600 mt-1">${alt.specification}</div>
+                                        <div class="font-medium text-gray-800 text-sm mb-1">${medicationType(alt)}</div>
+                                        <!-- 修改这里：备选方案也加粗显示规格 -->
+                                        <div class="text-gray-700">
+                                            <div class="flex items-center space-x-1">
+                                                <span class="text-xs text-gray-600"></span>
+                                                ${formatSpecification(alt.specification)}
+                                            </div>
+                                        </div>
                                     </div>
                                     <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm font-medium">
                                         ${countDisplay} ${tabletText}
