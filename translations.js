@@ -30,6 +30,7 @@ export const translations = {
         weightRangeDartepp: "Range: 5-100kg", // D-Artepp专用
         dosagePlan: "Recommended Dosage Plan",
         darteppDosagePlanTitle: "Recommended Dosage",
+        recommendedDosage: "Recommended Dosage:",
         argesunDosagePlanTitle: "Recommended Dose",
         artesunDosagePlanTitle: "Recommended Dose",
         selectWeight: "Please select weight",
@@ -37,6 +38,7 @@ export const translations = {
         backToProducts: "Back to Products",
         footerCopyright: "© 2025 Medical Dosage Calculator. Professional medical tool for safe medication.",
         footerDisclaimer: "This tool is for reference only, please follow medical advice for actual medication.",
+    
         // D-Artepp 结果
         darteppDosageResultTitle: "D-Artepp® dosage based on weight",
         darteppDosageResultSubtitle: "D-Artepp® - Three-day treatment plan",
@@ -136,6 +138,7 @@ export const translations = {
         weightRangeDartepp: "范围: 5-100kg", // D-Artepp专用
         dosagePlan: "推荐剂量方案",
         darteppDosagePlanTitle: "推荐剂量",
+        recommendedDosage: "推荐剂量",
         argesunDosagePlanTitle: "推荐用量",
         artesunDosagePlanTitle: "推荐用量",
         selectWeight: "请选择体重",
@@ -242,6 +245,7 @@ export const translations = {
         weightRangeDartepp: "Plage: 5-100kg", // D-Artepp专用
         dosagePlan: "Plan de Dosage Recommandé",
         darteppDosagePlanTitle: "Dosage recommandé",
+        recommendedDosage: "Dosage recommandé",
         argesunDosagePlanTitle: "Dose recommandée",
         artesunDosagePlanTitle: "Dose recommandée",
         selectWeight: "Veuillez sélectionner le poids",
