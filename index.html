@@ -15,6 +15,8 @@
             --medical-red: #dc2626;
             --bg-light: #f8fafc;
             --text-dark: #1f2937;
+            --logo-beige: #d0eaef; 
+            --logo-beige2: #89dff0;
         }
         
         body {
@@ -30,7 +32,8 @@
         }
         
         .medical-gradient {
-            background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-green) 100%);
+            /*background-color: var(--logo-beige);*/
+            background: linear-gradient(135deg, var(--logo-beige) 0%, var(--logo-beige2) 100%);
         }
         
         .hover-lift {
@@ -188,12 +191,42 @@
             flex-shrink: 0;
         }
 
-        /* 新增：产品图片样式 */
+        /* 核心修改：更扁的自然椭圆形logo容器样式 */
+        .product-image-container {
+            /* 更扁的椭圆：宽度200px，高度100px（宽高比2:1，扁度更明显） */
+            width: 150px;
+            height: 75px;
+            border-radius: 50%; /* 百分比圆角实现自然椭圆 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        /* 双图片容器的更扁椭圆样式 */
+        .product-image-dual-container {
+            /* 小扁椭圆：宽度100px，高度50px（同比例） */
+            width: 130px;
+            height: 65px;
+            border-radius: 50%; /* 关键：百分比圆角保持自然椭圆 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
         .product-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* 保持图片比例，完整显示在容器内 */
-            border-radius: 50%; /* 圆形显示 */
+            width: 220%; /* 图片放大到容器90%，保证清晰 */
+            height: 220%;
+            object-fit: contain; /* 保持图片比例 */
+        }
+        
+        /* 双图片里的小图片样式 */
+        .product-image-small {
+            width: 250%; /* 小椭圆内的图片放大 */
+            height: 250%;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -253,29 +286,36 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
                 <!-- D-Artepp 产品卡片 -->
                 <div class="product-card glass-card rounded-xl p-6 cursor-pointer" 
-                     data-product="dartepp" 
-                     onclick="selectProduct('dartepp')">
-                    <div class="text-center">
-                        <div class="w-16 h-16 medical-gradient rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z"></path>
-                            </svg>
+                data-product="dartepp" 
+                onclick="selectProduct('dartepp')">
+                <div class="text-center">
+                    <!-- 双图片容器 - 更扁的自然椭圆 -->
+                    <div class="flex justify-center items-center gap-3 mb-4">
+                        <!-- 图片1 - 更扁的自然椭圆背景 -->
+                        <div class="product-image-dual-container medical-gradient">
+                            <img src="dartepp1.png" alt="D-Artepp 1" class="product-image-small">
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">D-Artepp</h3>
-                        <p class="text-gray-600 mb-4" data-i18n="darteppDesc">Antimalarial Dosage Calculator</p>
-                        <div class="text-sm text-blue-600 font-medium" data-i18n="recommended">Recommended</div>
+                        
+                        <!-- 图片2 - 更扁的自然椭圆背景 -->
+                        <div class="product-image-dual-container medical-gradient">
+                            <img src="dartepp2.png" alt="D-Artepp 2" class="product-image-small">
+                        </div>
                     </div>
+                    
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">D-Artepp</h3>
+                    <p class="text-gray-600 mb-4" data-i18n="darteppDesc">Antimalarial Dosage Calculator</p>
+                    <div class="text-sm text-blue-600 font-medium" data-i18n="recommended">Recommended</div>
                 </div>
+            </div>
                 
                 <!-- Artesun 产品卡片 -->
                 <div class="product-card glass-card rounded-xl p-6 cursor-pointer" 
                      data-product="artesun" 
                      onclick="selectProduct('artesun')">
                     <div class="text-center">
-                        <div class="w-16 h-16 medical-gradient rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+                        <!-- 更扁的自然椭圆背景容器 -->
+                        <div class="product-image-container medical-gradient mb-4">
+                            <img src="artesun.png" alt="Argesun" class="product-image">
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">Artesun</h3>
                         <p class="text-gray-600 mb-4" data-i18n="artesunDesc">Artesunate for Injection</p>
@@ -287,7 +327,8 @@
                      data-product="argesun" 
                      onclick="selectProduct('argesun')">
                     <div class="text-center">
-                        <div class="w-16 h-16 medical-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+                        <!-- 更扁的自然椭圆背景容器 -->
+                        <div class="product-image-container medical-gradient mb-4">
                             <img src="argesun.png" alt="Argesun" class="product-image">
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">Argesun</h3>
